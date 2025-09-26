@@ -171,13 +171,12 @@ std::unique_ptr<Segment> Segment::decode(uint32_t sourceIP, uint32_t destination
     if (bytes.size() > 20) {
         copy(bytes.begin() + 20, bytes.end(), back_inserter(payload));
     }
-    // std::cout << "Length of payload: " << payload.size() << std::endl;
-
+    
     std::unique_ptr<Segment> segment = std::make_unique<Segment>(srcPrt, destPrt, seqNum, ackNum, flags, window, urgentPtr, sourceIP, std::move(payload));
     segment->checksum = checksum;
 
     TRACE_SRC("Segment Decoded - [SRCPRT=%u DSTPRT=%u SEQ=%u ACK=%u FLAG=%s WINDOW=%u CHKSUM=%u URGPTR=%u SRCIP=%u DATASIZE=%zu]", 
-        srcPrt, destPrt, seqNum, ackNum, flagsToStr(flags).c_str(), window, checksum, urgentPtr, segment->getData().size());
+        srcPrt, destPrt, seqNum, ackNum, flagsToStr(flags).c_str(), window, checksum, urgentPtr, sourceIP, segment->getData().size());
 
     return segment;
 }

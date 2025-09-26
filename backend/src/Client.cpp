@@ -39,6 +39,7 @@ uint32_t Client::getLastAck() const {return last_ack;}
 uint8_t Client::getState() const {return state;}
 uint16_t Client::getLastByteSent() const {return lastByteSent;}
 bool Client::getIsFinSent() const {return isFinSent;}
+uint16_t Client::getWindowSize() const {return windowSize;}
 
 void Client::setPort(uint16_t p) {port = p;}
 void Client::setIP(uint32_t ip) {IP = ip;}
@@ -51,7 +52,7 @@ void Client::setState(uint8_t s) {
 }
 void Client::setLastByteSent(uint16_t size) {lastByteSent = size;}
 void Client::setIsFinSent(bool fin) {isFinSent = fin;}
-
+void Client::setWindowSize(uint16_t size) {windowSize = size;}
 
 
 time_t Client::getLastTimeMessageSent() const { 
@@ -94,7 +95,7 @@ void Client::setItemMessageBuffer(uint32_t seq, std::unique_ptr<Segment> val) {
     DEBUG_SRC("Client [IP=%u PORT=%u] - Received out of order Packet[SEQ=%u]", IP, port, seq);
 }
 
-// MESSEGES SENT FUNCTIONS
+// MESSAGES SENT FUNCTIONS
 void Client::pushMessage(std::unique_ptr<Segment> seg) {
     uint16_t segSize = Segment::HEADER_SIZE + seg->getData().size();
     TRACE_SRC("Client [IP=%u PORT=%u] - Packet[SEQ=%u SIZE=%u] Sent and appended", IP, port, seg->getSeqNum(), segSize);

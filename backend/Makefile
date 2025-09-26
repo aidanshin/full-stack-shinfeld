@@ -8,6 +8,7 @@ SRC_SEGMENT = src/Segment.cpp
 SEGMENT_TEST_SRC = tests/SegmentTest.cpp
 SOCKET_TEST_SRC = tests/SocketTest.cpp
 LOGGER_TEST_SRC = tests/LoggerTest.cpp
+SIMPLE_TEST_SRC = tests/SimpleTest.cpp
 
 MAIN = main.cpp
 MAIN_BIN = tcp_program
@@ -15,6 +16,7 @@ MAIN_BIN = tcp_program
 SEGMENT_TEST_BIN = tests/segment_test
 SOCKET_TEST_BIN = tests/socket_test
 LOGGER_TEST_BIN = tests/logger_test
+SIMPLE_TEST_BIN = tests/simple_test
 
 $(MAIN_BIN): $(MAIN) $(SRC)
 	$(CXX) $(CXXFLAGS) $(MAIN) $(SRC) -o $(MAIN_BIN)
@@ -28,8 +30,11 @@ $(SOCKET_TEST_BIN): $(SOCKET_TEST_SRC) $(SRC_SOCKET)
 $(LOGGER_TEST_BIN): $(LOGGER_TEST_SRC)
 	$(CXX) $(CXXFLAGS) $(LOGGER_TEST_SRC) -o $(LOGGER_TEST_BIN)
 
+$(SIMPLE_TEST_BIN): $(SIMPLE_TEST_SRC)
+	$(CXX) $(CXXFLAGS) $(SIMPLE_TEST_SRC) -o $(SIMPLE_TEST_BIN)
+
 clean:
-	rm -f $(SEGMENT_TEST_BIN) $(SOCKET_TEST_BIN) $(LOGGER_TEST_BIN) $(MAIN_BIN) app_*.log
+	rm -f $(SEGMENT_TEST_BIN) $(SOCKET_TEST_BIN) $(LOGGER_TEST_BIN) $(MAIN_BIN) app_*.log 
 
 run: $(MAIN_BIN)
 	./$(MAIN_BIN) $(ARGS)

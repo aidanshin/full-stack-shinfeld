@@ -26,11 +26,11 @@ class ThreadSafeQueue {
             cv.notify_one();
         }
 
-        T pop() {
+        std::optional<T> pop() {
             std::unique_lock<std::mutex> lock(mtx);
             cv.wait(lock, [this]() {return closed || !q.empty(); });
 
-            if (q.empty()) return nullptr;
+            if (q.empty()) return std::nullopt;
             T item = std::move(q.front());
             q.pop();
             return item;

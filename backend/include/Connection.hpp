@@ -41,14 +41,13 @@ class Connection {
 
     private:
         static constexpr uint16_t MAX_DATA_SIZE = 1000;
-        static constexpr time_t MAX_SEGMENT_LIFE = 5; // typical value is 2 minutes 
+        static constexpr time_t MAX_SEGMENT_LIFE = 60; // typical value is 2 minutes 
         uint16_t source_port;
         uint16_t destination_port;
         std::string source_ip_str;
         std::string destination_ip_str;    
         uint32_t sourceIP;
         uint32_t destinationIP;
-        // uint32_t window_slider{0};
         uint16_t window_size{100};
         uint16_t urgent_pointer{0};
         uint32_t default_sequence_number{1000};
@@ -62,8 +61,7 @@ class Connection {
         
         std::map<uint16_t, Client> clients;
         std::vector<uint8_t> dataToSend; 
-        uint16_t lastByteSent{0}; // data number of byte - subtract 1 to get index of dataToSend
-
+        
 
         std::atomic<bool> running{false};
         std::atomic<bool> timeToClose{false};
@@ -76,6 +74,7 @@ class Connection {
         
         void createMessage(uint16_t srcPort, uint16_t dstPrt, uint32_t seqNum, uint32_t ackNum, uint8_t flag, uint16_t window, uint16_t urgentPtr, uint32_t dstIP, std::vector<uint8_t> data, uint8_t state);
         void resendMessages(uint16_t port, uint32_t newAck);
+        void sendMessages(uint16_t port);
 
         void messageHandler(std::unique_ptr<Segment> seg);
         void messageResendCheck();
@@ -112,9 +111,6 @@ class Connection {
 
         uint32_t getDefaultAckNumber() const {return default_ack_number;}
         void setDefaultAckNumber(uint32_t val) {default_ack_number = val;}
-
-        uint16_t getLastByteSent() const {return lastByteSent;}
-        void setLastByteSent(uint16_t val) {lastByteSent = val;}
 
 };
 

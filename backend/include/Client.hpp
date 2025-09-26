@@ -23,6 +23,7 @@ class Client {
         std::queue<std::unique_ptr<Segment>> messagesSent;              // QUEUE holding un-ACK messages (can retransmit)
         uint16_t totalSizeOfMessagesSent{0};                            // total size of QUEUE in bytes
         uint16_t lastByteSent{0};                                       // Last Byte Sent from Data
+        uint16_t windowSize{0};
         time_t lastTimeMessageSent{0};                                  // Last Time Sent a message
         bool isFinSent{false};                                          // True when we have created a FIN and appended to the queue
         std::string filename;                                           // FILENAME FOR DATA RECEIVED
@@ -32,8 +33,8 @@ class Client {
         Client() = default;
         Client(const Client&) = delete;
         Client& operator=(const Client&) = delete;
-        Client(Client&&) noexcept = default;
-        Client& operator = (Client&&) noexcept = default;
+        // Client(Client&&) noexcept = default;
+        // Client& operator = (Client&&) noexcept = default;
 
         explicit Client(
             uint16_t port,
@@ -56,6 +57,7 @@ class Client {
         uint16_t getLastByteSent() const;
         time_t getLastTimeMessageSent() const;
         bool getIsFinSent() const;
+        uint16_t getWindowSize() const;
         
 
         void setPort(uint16_t p);
@@ -68,6 +70,7 @@ class Client {
         void setLastTimeMessageSent();
         std::function<void()> LastTimeMessageSent();
         void setIsFinSent(bool fin);
+        void setWindowSize(uint16_t size);
 
         bool checkItemMessageBuffer(uint32_t seq);
         bool popItemMessageBuffer(uint32_t seq, std::unique_ptr<Segment>& val);

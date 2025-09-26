@@ -62,32 +62,34 @@ void SocketHandler::send() {
     INFO_SRC("SocketHandler[Sender] - Thread Started");
     while (running) {
         
-        SendItemType item = senderQueue.pop();
-        Segment* segment = item.first;
-        if (!segment) {
-            DEBUG_SRC("SocketHandler[Sender] - Sender queue return nullptr, stopping thread");
-            break;
-        }
-        struct sockaddr_in senaddr{};
-        memset(&senaddr, 0, sizeof(senaddr));
-
-        senaddr.sin_family = AF_INET;
-        senaddr.sin_port = htons(segment->getDestPrt()); // target port
-        senaddr.sin_addr.s_addr = htonl(segment->getDestinationIP()); // target IP
+        auto opt_item = senderQueue.pop();
         
-        uint8_t protocol = 6;
-        std::vector<uint8_t> msg = segment->encode(selfIP, segment->getDestinationIP(), protocol);
-
-        DEBUG_SRC("SocketHandler[Sender] - Preparing packet to send[IP=%u DSTPRT=%u SEQ=%U ACK=%u FLAGS=%u]", segment->getDestinationIP(), segment->getDestPrt(), segment->getSeqNum(), segment->getAckNum(), segment->getFlags());
-
-        int n;
-        if ((n = sendto(socketfd, reinterpret_cast<const char *>(msg.data()), msg.size(), 0, (sockaddr*)&senaddr, sizeof(senaddr))) < 0) {
-            ERROR_SRC("SocketHandler[Sender] - sendto() failure");
-        } else {
-            TRACE_SRC("SocketHandler[Sender] - Successfully sent %i bytes", n);
-            if(item.second) item.second();
+        if (!opt_item) {
+            WARNING_SRC("SocketHandler[Sender] - Sender queue return nullptr, ignoring response");
         }
-    
+        else {
+            std::pair<Segment*, std::function<void()>> item = std::move(*opt_item);
+            Segment* segment = item.first;
+            struct sockaddr_in senaddr{};
+            memset(&senaddr, 0, sizeof(senaddr));
+
+            senaddr.sin_family = AF_INET;
+            senaddr.sin_port = htons(segment->getDestPrt()); // target port
+            senaddr.sin_addr.s_addr = htonl(segment->getDestinationIP()); // target IP
+            
+            uint8_t protocol = 6;
+            std::vector<uint8_t> msg = segment->encode(selfIP, segment->getDestinationIP(), protocol);
+
+            DEBUG_SRC("SocketHandler[Sender] - Preparing packet to send[IP=%u DSTPRT=%u SEQ=%U ACK=%u FLAGS=%u]", segment->getDestinationIP(), segment->getDestPrt(), segment->getSeqNum(), segment->getAckNum(), segment->getFlags());
+
+            int n;
+            if ((n = sendto(socketfd, reinterpret_cast<const char *>(msg.data()), msg.size(), 0, (sockaddr*)&senaddr, sizeof(senaddr))) < 0) {
+                ERROR_SRC("SocketHandler[Sender] - sendto() failure");
+            } else {
+                TRACE_SRC("SocketHandler[Sender] - Successfully sent %i bytes", n);
+                if(item.second) item.second();
+            }
+        }
     }
 }
 
