@@ -1,5 +1,6 @@
 #include "Client.hpp"
-#include "Connection.hpp"
+#include "Flags.hpp"
+#include "Segment.hpp"
 #include "Logger.hpp"
 
 Client::Client(
@@ -31,6 +32,11 @@ Client::~Client() {
     INFO_SRC("Client [IP=%u PORT=%u] - Deleted", IP, port);
 }
 
+void Client::info() {
+    DEBUG_SRC("Client[IP=%u PORT=%u EXPSEQ=%u EXPACK=%u LASTACK=%u STATE=%s lastByteSent=%u totalSizeOfMessagesSent=%u lastTimeMessageSent=%lld isFineSent=%d]", 
+            IP, port, expected_sequence, expected_ack, last_ack, stateToStr(state).c_str(), lastByteSent, totalSizeOfMessagesSent, static_cast<long long>(lastTimeMessageSent), static_cast<int>(isFinSent));
+}
+
 uint16_t Client::getPort() const {return port;}
 uint32_t Client::getIP() const {return IP;}
 uint32_t Client::getExpectedSequence() const {return expected_sequence;}
@@ -40,6 +46,7 @@ uint8_t Client::getState() const {return state;}
 uint16_t Client::getLastByteSent() const {return lastByteSent;}
 bool Client::getIsFinSent() const {return isFinSent;}
 uint16_t Client::getWindowSize() const {return windowSize;}
+std::string Client::getFileName() const {return filename;}
 
 void Client::setPort(uint16_t p) {port = p;}
 void Client::setIP(uint32_t ip) {IP = ip;}
@@ -92,7 +99,7 @@ bool Client::popItemMessageBuffer(uint32_t seq, std::unique_ptr<Segment>& val) {
 
 void Client::setItemMessageBuffer(uint32_t seq, std::unique_ptr<Segment> val) {
     messageBuffer.insert_or_assign(seq, std::move(val));
-    DEBUG_SRC("Client [IP=%u PORT=%u] - Received out of order Packet[SEQ=%u]", IP, port, seq);
+    DEBUG_SRC("Client [IP=%u PORT=%u] - Received out of order Packet[SEQ=%u EXPSEQ=%u]", IP, port, seq, expected_ack);
 }
 
 // MESSAGES SENT FUNCTIONS
@@ -117,7 +124,7 @@ bool Client::popMessage(std::unique_ptr<Segment>& seg) {
 
 bool Client::checkFront(uint32_t ackNum) {
     if (messagesSent.empty()) return false;
-    if (messagesSent.front()->getSeqNum() <= ackNum) {
+    if (messagesSent.front()->getSeqNum() < ackNum) {
         uint16_t segSize = Segment::HEADER_SIZE + messagesSent.front()->getData().size();
         totalSizeOfMessagesSent -= segSize;
         DEBUG_SRC("Client [IP=%u PORT=%u] - Deleting a Packet that has been sent and Ack'd\tSEQ: %u\tAckNumReceived: %u", IP, port, messagesSent.front()->getSeqNum(), ackNum);

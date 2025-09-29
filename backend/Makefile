@@ -4,11 +4,13 @@ CXXFLAGS = -std=c++17 -Wall -I./include
 SRC = src/Client.cpp src/Segment.cpp src/SocketHandler.cpp src/Connection.cpp
 SRC_SOCKET = src/Segment.cpp src/SocketHandler.cpp
 SRC_SEGMENT = src/Segment.cpp
+SRC_CLIENT = src/Client.cpp src/Segment.cpp
 
 SEGMENT_TEST_SRC = tests/SegmentTest.cpp
 SOCKET_TEST_SRC = tests/SocketTest.cpp
 LOGGER_TEST_SRC = tests/LoggerTest.cpp
 SIMPLE_TEST_SRC = tests/SimpleTest.cpp
+CLIENT_TEST_SRC = tests/ClientTest.cpp
 
 MAIN = main.cpp
 MAIN_BIN = tcp_program
@@ -17,6 +19,7 @@ SEGMENT_TEST_BIN = tests/segment_test
 SOCKET_TEST_BIN = tests/socket_test
 LOGGER_TEST_BIN = tests/logger_test
 SIMPLE_TEST_BIN = tests/simple_test
+CLIENT_TEST_BIN = tests/client_test
 
 $(MAIN_BIN): $(MAIN) $(SRC)
 	$(CXX) $(CXXFLAGS) $(MAIN) $(SRC) -o $(MAIN_BIN)
@@ -33,8 +36,11 @@ $(LOGGER_TEST_BIN): $(LOGGER_TEST_SRC)
 $(SIMPLE_TEST_BIN): $(SIMPLE_TEST_SRC)
 	$(CXX) $(CXXFLAGS) $(SIMPLE_TEST_SRC) -o $(SIMPLE_TEST_BIN)
 
+$(CLIENT_TEST_BIN) : $(CLIENT_TEST_SRC) $(SRC_CLIENT)
+	$(CXX) $(CXXFLAGS) $(CLIENT_TEST_SRC) $(SRC_CLIENT) -o $(CLIENT_TEST_BIN)
+
 clean:
-	rm -f $(SEGMENT_TEST_BIN) $(SOCKET_TEST_BIN) $(LOGGER_TEST_BIN) $(MAIN_BIN) app_*.log 
+	rm -f $(SEGMENT_TEST_BIN) $(SOCKET_TEST_BIN) $(LOGGER_TEST_BIN) $(MAIN_BIN) app_*.log *.dat
 
 run: $(MAIN_BIN)
 	./$(MAIN_BIN) $(ARGS)
@@ -47,3 +53,9 @@ run_socket_test: $(SOCKET_TEST_BIN)
 
 run_logger_test: $(LOGGER_TEST_BIN)
 	./$(LOGGER_TEST_BIN) $(ARGS)
+
+run_simple_test: $(SIMPLE_TEST_BIN)
+	./$(SIMPLE_TEST_BIN)
+
+run_client_test: $(CLIENT_TEST_BIN)
+	./$(CLIENT_TEST_BIN)

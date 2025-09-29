@@ -112,34 +112,38 @@ void Connection::sendMessages(uint16_t port) {
         uint16_t messagesSentSize = client->second.sizeMessageSent();
         uint16_t bufferSizeAvailable = client->second.getWindowSize() - messagesSentSize;
         
-        INFO_SRC("Connection[sendMessages] - Checking the buffer size and created new packets if possible");
-        int iterations = round(bufferSizeAvailable/MAX_DATA_SIZE)+1;
-        for (int i = 0; i < iterations; i++) {
-            if (client->second.getLastByteSent() == dataToSend.size()) {
-                break;
+        if(client->second.getLastByteSent() != dataToSend.size()) {
+            INFO_SRC("Connection[sendMessages] - Checking the buffer size and created new packets if possible");
+            int iterations = round(bufferSizeAvailable/MAX_DATA_SIZE)+1;
+            for (int i = 0; i < iterations; i++) {
+                if (client->second.getLastByteSent() == dataToSend.size()) {
+                    break;
+                }
+
+                auto start = dataToSend.begin() + client->second.getLastByteSent();
+                auto end = (start + MAX_DATA_SIZE > dataToSend.end()) ? dataToSend.end() : start + MAX_DATA_SIZE;
+                std::vector<uint8_t> msg(start, end);
+
+                createMessage(
+                    source_port, 
+                    client->second.getPort(), 
+                    client->second.getExpectedSequence(), 
+                    client->second.getExpectedAck(), 
+                    static_cast<uint8_t>(FLAGS::ACK), 
+                    window_size, 
+                    urgent_pointer, 
+                    client->second.getIP(), 
+                    msg, 
+                    client->second.getState()
+                );
+                
+                size_t bytesSent = std::distance(dataToSend.begin(), end);
+                client->second.setLastByteSent(bytesSent);
+                bufferSizeAvailable -= bytesSent + Segment::HEADER_SIZE;
+                TRACE_SRC("Connection[messageHandler] - bytesSent=%zu bufferSizeAvailable=%u", bytesSent, bufferSizeAvailable);                 
             }
+        } else {
 
-            auto start = dataToSend.begin() + client->second.getLastByteSent();
-            auto end = (start + MAX_DATA_SIZE > dataToSend.end()) ? dataToSend.end() : start + MAX_DATA_SIZE;
-            std::vector<uint8_t> msg(start, end);
-
-            createMessage(
-                source_port, 
-                client->second.getPort(), 
-                client->second.getExpectedSequence(), 
-                client->second.getExpectedAck(), 
-                static_cast<uint8_t>(FLAGS::ACK), 
-                window_size, 
-                urgent_pointer, 
-                client->second.getIP(), 
-                msg, 
-                client->second.getState()
-            );
-            
-            size_t bytesSent = std::distance(dataToSend.begin(), end);
-            client->second.setLastByteSent(bytesSent);
-            bufferSizeAvailable -= bytesSent + Segment::HEADER_SIZE;
-            TRACE_SRC("Connection[messageHandler] - bytesSent=%zu bufferSizeAvailable=%u", bytesSent, bufferSizeAvailable);                 
         }
     }
 }
@@ -222,8 +226,7 @@ void Connection::communicate() {
         Client& client = clients.at(destination_port);
         createMessage(source_port, client.getPort(), default_sequence_number, default_ack_number, static_cast<uint8_t>(FLAGS::SYN), window_size,  urgent_pointer, destinationIP, std::vector<uint8_t>{}, static_cast<uint8_t>(STATE::SYN_SENT));
     }
-    std::cout<< "QUITING" << std::endl;
-    // exit(1);
+    
     std::unique_ptr<Segment> seg;
     std::string input;
     while (running) {
@@ -255,16 +258,20 @@ void Connection::communicate() {
 		            break;
                 case FlagType::FIN:
                     if (auto client = clients.find(seg->getSrcPrt()); client != clients.end()) {
+                        // std::cout << "Received FIN: " << seg->getSeqNum() << " : " << client->second.getExpectedAck();
+                        // std::cout << " - Received Seq: " << seg->getAckNum() << " : " << client->second.getExpectedSequence() << std::endl;
+
                         if (seg->getSeqNum() > client->second.getExpectedAck()) {
-                            if ((seg->getAckNum() > client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence())) {
+                            uint32_t copySeqNum = seg->getSeqNum();
+                            if ((seg->getAckNum() >= client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence())) {
                                 messageHandler(std::move(seg));
                             } else {
                                 client->second.setWindowSize(seg->getWindowSize());
                                 client->second.setItemMessageBuffer(seg->getSeqNum(), std::move(seg));
                             }
-                            DEBUG_SRC("Connection[communicate] - Received out of order packet [TYPE=FIN SEQ=%u EXPSEQ=%u]", seg->getSeqNum(), client->second.getExpectedAck());
+                            DEBUG_SRC("Connection[communicate] - Received out of order packet [TYPE=FIN SEQ=%u EXPSEQ=%u]", copySeqNum, client->second.getExpectedAck());
                         }
-                        else if ((seg->getAckNum() > client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence()) && seg->getSeqNum() == client->second.getExpectedAck()) {
+                        else if ((seg->getAckNum() >= client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence()) && seg->getSeqNum() == client->second.getExpectedAck()) {
                             DEBUG_SRC("Connection[communicate] - Received in order packet[FIN] with valid ACK");
 
                             uint8_t newState = static_cast<uint8_t>(STATE::NONE);
@@ -288,7 +295,7 @@ void Connection::communicate() {
                             
                         } 
                         else {
-                            WARNING_SRC("Connection[communicate] - Client[IP:%u PORT:%u] Sent FIN with Incorrect ACK [EXPACK=%u ACK=%u]", seg->getDestinationIP(), seg->getSrcPrt(), client->second.getExpectedAck(), seg->getAckNum());
+                            WARNING_SRC("Connection[communicate] - Client[IP:%u PORT:%u] Sent FIN with Incorrect SEQ & ACK [EXP_SEQ=%u EXP_ACK=%u SEQ=%u ACK=%u]", seg->getDestinationIP(), seg->getSrcPrt(), client->second.getExpectedAck(), client->second.getExpectedSequence(), seg->getSeqNum(),  seg->getAckNum());
                         }
                     } 
                     else {
@@ -299,7 +306,11 @@ void Connection::communicate() {
                 case FlagType::FIN_ACK:
 
                     if (auto client = clients.find(seg->getSrcPrt()); client != clients.end()) {
+                        // std::cout << "Received FIN_ACK: " << seg->getSeqNum() << " : " << client->second.getExpectedAck();
+                        // std::cout << " - Received Seq: " << seg->getAckNum() << " : " << client->second.getExpectedSequence() << std::endl;
+
                         if(seg->getSeqNum() > client->second.getExpectedAck()) {
+                            uint32_t copySeqNum = seg->getSeqNum();
                             if ((seg->getAckNum() > client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence())) {
                                 messageHandler(std::move(seg));
                             } 
@@ -307,14 +318,14 @@ void Connection::communicate() {
                                 client->second.setWindowSize(seg->getWindowSize());
                                 client->second.setItemMessageBuffer(seg->getSeqNum(), std::move(seg));
                             }
-                            DEBUG_SRC("Connection[communicate] - Received out of order packet [TYPE=FIN_ACK SEQ=%u EXPSEQ=%u]", seg->getSeqNum(), client->second.getExpectedAck());
+                            DEBUG_SRC("Connection[communicate] - Received out of order packet [TYPE=FIN_ACK SEQ=%u EXPSEQ=%u]", copySeqNum, client->second.getExpectedAck());
 
                         }
                         else if (seg->getAckNum() == client->second.getExpectedSequence() && seg->getSeqNum() == client->second.getExpectedAck()) {
                             DEBUG_SRC("Connection[communicate] - Received in order packet[FIN_ACK] with valid ACK");
 
                             while(client->second.checkFront(seg->getAckNum()));
-                            client->second.setExpectedSequence(seg->getAckNum()+1);
+                            client->second.setExpectedSequence(seg->getAckNum());
                             client->second.setExpectedAck(seg->getSeqNum()+1);
                             client->second.setLastAck(seg->getAckNum());
                             client->second.setWindowSize(seg->getWindowSize());
@@ -330,7 +341,7 @@ void Connection::communicate() {
                             }
 
                             client->second.setState(static_cast<uint8_t>(newState));
-                            
+                            client->second.info();
                         } 
                         else {
                             WARNING_SRC("Connection[communicate] - Client[IP:%u PORT:%u] Sent FIN_ACK with Incorrect SEQ & ACK [EXP_SEQ=%u EXP_ACK=%u SEQ=%u ACK=%u]", seg->getDestinationIP(), seg->getSrcPrt(), client->second.getExpectedAck(), client->second.getExpectedSequence(), seg->getSeqNum(),  seg->getAckNum());
@@ -345,7 +356,9 @@ void Connection::communicate() {
                 case FlagType::ACK:
                     
                     if (auto client = clients.find(seg->getSrcPrt()); client != clients.end()) {
+                        // std::cout << "Received ACK: " << seg->getSeqNum() << " : " << client->second.getExpectedAck() << std::endl;
                         if (seg->getSeqNum() > client->second.getExpectedAck()) {
+                            uint32_t copySeqNum = seg->getSeqNum();
                             if(seg->getAckNum() > client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence()) {
                                 messageHandler(std::move(seg));
                             }
@@ -353,9 +366,9 @@ void Connection::communicate() {
                                 client->second.setWindowSize(seg->getWindowSize());
                                 client->second.setItemMessageBuffer(seg->getSeqNum(), std::move(seg));
                             }
-                            DEBUG_SRC("Connection[communicate] - Received out of order packet [TYPE=ACK SEQ=%u EXPSEQ=%u]", seg->getSeqNum(), client->second.getExpectedAck());
+                            DEBUG_SRC("Connection[communicate] - Received out of order packet [TYPE=ACK SEQ=%u EXPSEQ=%u]", copySeqNum, client->second.getExpectedAck());
                         }
-                        else if(seg->getAckNum() > client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence() && seg->getSeqNum() == client->second.getExpectedAck()) {
+                        else if(seg->getAckNum() >= client->second.getLastAck() && seg->getAckNum() <= client->second.getExpectedSequence() && seg->getSeqNum() == client->second.getExpectedAck()) {
                             DEBUG_SRC("Connection[communicate] - Received in order packet[ACK] with valid ACK");
                             
                             size_t data_written = 0;
@@ -363,7 +376,11 @@ void Connection::communicate() {
                             if (!seg->getData().empty()) {
                                 INFO_SRC("Connection[communicate] - Received packet[IP=%u PORT=%u SEQ=%u ACK=%u SIZE=%zu] with data -> attempting to write to file", client->second.getIP(), client->second.getPort(), seg->getSeqNum(), seg->getAckNum(), seg->getData().size());
                                 
-                                data_written = client->second.writeFile(seg->getData());
+                                for(uint8_t byte : seg->getData()) {
+                                    std::cout << byte;
+                                }
+                                std::cout << std::endl;
+                                data_written = client->second.writeFile(std::move(seg->getData()));
                                 
                                 uint32_t new_seq_num = seg->getSeqNum() + data_written + 1;
                                 
@@ -371,7 +388,11 @@ void Connection::communicate() {
                                     std::unique_ptr<Segment> outOfOrderSegment;
                                     while (client->second.popItemMessageBuffer(new_seq_num, outOfOrderSegment)) {
                                         TRACE_SRC("Connection[communicate] - Attempting to write out of order packet[IP=%u PORT=%u SEQ=%u ACK=%u SIZE=%zu] to file", client->second.getIP(), client->second.getPort(), outOfOrderSegment->getSeqNum(), outOfOrderSegment->getAckNum(), outOfOrderSegment->getData().size());
-                                        data_written = client->second.writeFile(outOfOrderSegment->getData());
+                                        for(uint8_t byte : outOfOrderSegment->getData()) {
+                                            std::cout << byte;
+                                        }
+                                        std::cout << std::endl;
+                                        data_written = client->second.writeFile(std::move(outOfOrderSegment->getData()));
                                         new_seq_num += data_written + 1;
                                     }
                                 }
@@ -380,13 +401,33 @@ void Connection::communicate() {
                                 
                                 seg->setSeqNum(new_seq_num); 
                                 client->second.setExpectedAck(new_seq_num);
-                            } 
+                                
+                                
+                                createMessage(
+                                    source_port,
+                                    client->second.getPort(),
+                                    client->second.getExpectedSequence(),
+                                    client->second.getExpectedAck(),
+                                    static_cast<uint8_t>(FLAGS::ACK),
+                                    window_size,
+                                    urgent_pointer,
+                                    client->second.getIP(),
+                                    std::vector<uint8_t>{},
+                                    client->second.getState()
+                                );
+                            } else {
+                                client->second.setExpectedAck(client->second.getExpectedAck()+1);
+                            }
 
-                            DEBUG_SRC("Connection[communicate] - Calling messageHandler to determine additional responses for packet received");
-                            messageHandler(std::move(seg));
+                            if(client->second.getState() == static_cast<uint8_t>(STATE::SYN_SENT)) {
+                                client->second.setState(static_cast<uint8_t>(STATE::ESTABLISHED));
+                            } else {
+                                DEBUG_SRC("Connection[communicate] - Calling messageHandler to determine additional responses for packet received");
+                                messageHandler(std::move(seg));
+                            }
                             
                         } else {
-                            WARNING_SRC("Connection[communicate] - Client[IP:%u PORT:%u] Sent ACK with Incorrect ACK [EXPECTEDACK=%u ACK=%u]", seg->getDestinationIP(), seg->getSrcPrt(), client->second.getExpectedAck(), seg->getAckNum());
+                            WARNING_SRC("Connection[communicate] - Client[IP:%u PORT:%u] Sent ACK with Incorrect ACK [SEGSEQ=%u SEGACK=%U CLISEQ=%u CLIACK=%u]", seg->getDestinationIP(), seg->getSrcPrt(), seg->getSeqNum(), seg->getAckNum(), client->second.getExpectedSequence(), client->second.getExpectedAck());
                         }
                     } else {
                         WARNING_SRC("Connection[communicate] - Received ACK from unknown client [IP:%u PORT:%u]", seg->getDestinationIP(), seg->getSrcPrt());
@@ -417,7 +458,16 @@ void Connection::communicate() {
             }
         } 
         else if (timeToClose) {
-            INFO_SRC("Connection[communicate] - timeToClose=TRUE -> creating for FINs for clients");
+            if(clients.empty()) {
+                // std::cout << "Clients empty shutting down loop and calling safeToClose" << std::endl;
+                running = false;
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    canCloseDown = true;
+                    safeToClose.notify_one();
+                }
+                break;
+            }
             
             std::vector<uint16_t> portsToRemove;
             
@@ -469,16 +519,15 @@ void Connection::communicate() {
         }
     
     }
-
 }
 
 void Connection::disconnect() {
-    running = false;
     timeToClose = true;
     {
         std::unique_lock<std::mutex> lock(mtx);
         safeToClose.wait(lock, [this] {return canCloseDown;});
     }
+    // std::cout << "Safe to Close trigger" << std::endl;
     socketHandler->stop();
     if(communicationThread.joinable()) communicationThread.join();
     INFO_SRC("Connection[disconnect] - Closed all threads and connection");

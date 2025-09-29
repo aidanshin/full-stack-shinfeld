@@ -88,7 +88,9 @@ class Client {
         size_t writeFile(const std::vector<uint8_t>& data);
         void closeFile();
         void setFileName(const std::string& filePath);
-
+        std::string getFileName() const;
+        
+        void info();
 };
 
 #endif

@@ -129,7 +129,10 @@ void SocketHandler::start() {
 }
 
 void SocketHandler::stop() {
+    INFO_SRC("SocketHandler[Stop] - Called to now safely close sockets.");
     running = false;
+    senderQueue.close();
+    receiverQueue.close();
     shutdown(socketfd, SHUT_RDWR);
     if(receiverThread.joinable()) receiverThread.join();
     if(senderThread.joinable()) senderThread.join();

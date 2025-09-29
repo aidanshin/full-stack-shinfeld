@@ -71,5 +71,33 @@ inline std::string flagsToStr(uint8_t flag) {
     }
 }
 
+enum class STATE : uint8_t{
+            NONE,
+            SYN_SENT,
+            SYN_RECEIVED,
+            ESTABLISHED,
+            FIN_WAIT_1,
+            FIN_WAIT_2,
+            TIME_WAIT,
+            CLOSING,
+            CLOSED,
+            LAST_ACK
+        };
+
+inline std::string stateToStr(uint8_t state) {
+    switch(state) {
+        case static_cast<uint8_t>(STATE::NONE): return "NONE"; 
+        case static_cast<uint8_t>(STATE::SYN_SENT): return "SYN_SENT";
+        case static_cast<uint8_t>(STATE::SYN_RECEIVED): return "SYN_RECEIVED";
+        case static_cast<uint8_t>(STATE::ESTABLISHED): return "ESTABLISHED";
+        case static_cast<uint8_t>(STATE::FIN_WAIT_1): return "FIN_WAIT_1";
+        case static_cast<uint8_t>(STATE::FIN_WAIT_2): return "FIN_WAIT_2";
+        case static_cast<uint8_t>(STATE::TIME_WAIT): return "TIME_WAIT";
+        case static_cast<uint8_t>(STATE::CLOSING): return "CLOSING";
+        case static_cast<uint8_t>(STATE::CLOSED): return "CLOSED";
+        case static_cast<uint8_t>(STATE::LAST_ACK): return "LAST_ACK";
+        default: return "ERROR";
+    }
+}
 
 #endif 
