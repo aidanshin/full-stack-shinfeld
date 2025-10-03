@@ -253,7 +253,7 @@ void Connection::messageResendCheck() {
         }
     }
     
-    sleep(3);
+    sleep(3); //FIXME: REMOVE THIS BAD BOY
 }
 
 void Connection::communicate() {

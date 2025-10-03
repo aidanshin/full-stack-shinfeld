@@ -29,7 +29,7 @@ void SocketHandler::receive() {
     int n;
     memset(&senaddr, 0, sizeof(senaddr));
     INFO_SRC("SockerHandler[Receiver] - Thread Started");
-    ErrorTest error_test;
+    
     while (running){
         len = sizeof(senaddr);
 
@@ -43,12 +43,8 @@ void SocketHandler::receive() {
             std::unique_ptr<Segment> segment = Segment::decode(sourceIP, selfIP, protocol, payload);
             if (segment && decodeFlags(segment->getFlags()) != FlagType::INVALID) {
                 segment->setDestinationIP(sourceIP);
-                if(error_test.dropPacket(0.9)){
-                    TRACE_SRC("SocketHandler[Receiver] - New Packet Valid [IP=%u PORT=%u SEQ=%u ACK=%u FLAG=%s]", sourceIP, segment->getSrcPrt(), segment->getSeqNum(), segment->getAckNum(), flagsToStr(segment->getFlags()).c_str());
-                    receiverQueue.push(std::move(segment));
-                } else {
-                    WARNING_SRC("SocketHandler[Receiver] - Dropped the packet [IP=%u PORT=%u SEQ=%u ACK=%u FLAG=%s]", sourceIP, segment->getSrcPrt(), segment->getSeqNum(), segment->getAckNum(), flagsToStr(segment->getFlags()).c_str());
-                }
+                TRACE_SRC("SocketHandler[Receiver] - New Packet Valid [IP=%u PORT=%u SEQ=%u ACK=%u FLAG=%s]", sourceIP, segment->getSrcPrt(), segment->getSeqNum(), segment->getAckNum(), flagsToStr(segment->getFlags()).c_str());
+                receiverQueue.push(std::move(segment));
             } else {
                 WARNING_SRC("SocketHandler[Receiver] - Dropped Invalid Segment[IP=%u PORT=%u SIZE=%d]", sourceIP, ntohs(senaddr.sin_port), n);
             }
