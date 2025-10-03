@@ -14,6 +14,36 @@ Segment::Segment(
     uint16_t window,
     uint16_t urgentPtr,
     uint32_t destinationIP,
+    uint32_t start, 
+    uint32_t end
+) 
+:   source_port_address(srcPort), 
+    destination_port_address(destPort),
+    sequence_number(seqNum),
+    acknowledgement_number(ackNum),
+    header_length(5),
+    reserved(0),
+    flags(flags),
+    window_size(window),
+    checksum(0),
+    urgent_pointer(urgentPtr),
+    destinationIP(destinationIP),
+    start(start),
+    end(end)
+{
+    INFO_SRC("Segment Created - [srcPrt=%u dstPrt=%u seqNum=%u ackNum=%u flags=%s window=%u urgent=%u destIP=%u dataSize=%zu]",
+        source_port_address, destination_port_address, sequence_number, acknowledgement_number, flagsToStr(flags).c_str(), window_size, urgent_pointer, destinationIP, (end-start));
+}
+
+Segment::Segment(
+    uint16_t srcPort,
+    uint16_t destPort,
+    uint32_t seqNum,
+    uint32_t ackNum,
+    uint8_t flags,
+    uint16_t window,
+    uint16_t urgentPtr,
+    uint32_t destinationIP,
     std::vector<uint8_t> payload
 ) 
 :   source_port_address(srcPort), 
@@ -27,7 +57,7 @@ Segment::Segment(
     checksum(0),
     urgent_pointer(urgentPtr),
     destinationIP(destinationIP),
-    data(std::move(payload)) 
+    data(std::move(payload))
 {
     INFO_SRC("Segment Created - [srcPrt=%u dstPrt=%u seqNum=%u ackNum=%u flags=%s window=%u urgent=%u destIP=%u dataSize=%zu]",
         source_port_address, destination_port_address, sequence_number, acknowledgement_number, flagsToStr(flags).c_str(), window_size, urgent_pointer, destinationIP, data.size());
@@ -69,6 +99,14 @@ uint32_t Segment::getDestinationIP() const {
     return destinationIP;
 }
 
+uint32_t Segment::getStart() const {
+    return start;
+}
+
+uint32_t Segment::getEnd() const {
+    return end;
+}
+
 
 // Setters
 
@@ -98,6 +136,14 @@ void Segment::setData(const std::vector<uint8_t>& payload) {
 
 void Segment::setDestinationIP(uint32_t ip) {
     destinationIP = ip;
+}
+
+void Segment::setStart(uint32_t newStart) {
+    start = newStart;
+}
+
+void Segment::setEnd(uint32_t newEnd) {
+    end = newEnd;
 }
 
 
@@ -142,11 +188,16 @@ std::vector<uint8_t> Segment::encode(uint32_t sourceIP, uint32_t destinationIP, 
 }
 
 template<typename T>
-T combineBytes(const std::vector<uint8_t>& bytes, int start) {
-    size_t size = sizeof(T); 
-    T temp = 0 ;
+T combineBytes(const std::vector<uint8_t>& bytes, size_t start) {
+    const size_t size = sizeof(T); 
 
-    for (int i = 0; i < size; i++) {
+    if(start + size > bytes.size()) {
+        CRITICAL_SRC("combineBytes: not enough bytes starting at index");
+        exit(1);
+    }
+
+    T temp = 0 ;
+    for (size_t i = 0; i < size; i++) {
         temp |= T(bytes[i+start]) << (8 * (size-i-1));
     }
     return temp;
@@ -190,7 +241,7 @@ static uint32_t calculateCheckSum (uint32_t sourceIP, uint32_t destinationIP, ui
     sum += static_cast<uint16_t>(protocol);
     sum += static_cast<uint16_t>(segmentSize);
 
-    for (int i = 0; i < segmentSize; i+=2) {
+    for (size_t i = 0; i < segmentSize; i+=2) {
         if (i+1 == segmentSize) {
             sum += uint16_t((bytes[i] << 8) & 0xFFFF);
         } else {

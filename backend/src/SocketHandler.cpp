@@ -1,17 +1,19 @@
 #include "SocketHandler.hpp"
 #include "Flags.hpp"
 #include "Logger.hpp"
-
+#include "ErrorTest.hpp"
 
 SocketHandler::SocketHandler (
     uint16_t port,
     uint32_t selfIP,
     ThreadSafeQueue<std::unique_ptr<Segment>>& receiverQueue,
-    ThreadSafeQueue<std::pair<Segment*, std::function<void()>>>& senderQueue
+    ThreadSafeQueue<std::pair<std::unique_ptr<Segment>, std::function<void()>>>& senderQueue,
+    std::vector<uint8_t>& sendBuffer
 )
 :
     receiverQueue(receiverQueue),
     senderQueue(senderQueue),
+    sendBuffer(sendBuffer),
     socketfd(-1),
     port(port),
     selfIP(selfIP)
@@ -27,7 +29,7 @@ void SocketHandler::receive() {
     int n;
     memset(&senaddr, 0, sizeof(senaddr));
     INFO_SRC("SockerHandler[Receiver] - Thread Started");
-    
+    ErrorTest error_test;
     while (running){
         len = sizeof(senaddr);
 
@@ -41,8 +43,12 @@ void SocketHandler::receive() {
             std::unique_ptr<Segment> segment = Segment::decode(sourceIP, selfIP, protocol, payload);
             if (segment && decodeFlags(segment->getFlags()) != FlagType::INVALID) {
                 segment->setDestinationIP(sourceIP);
-                TRACE_SRC("SocketHandler[Receiver] - New Packet Valid [IP=%u PORT=%u SEQ=%u ACK=%u FLAG=%u]", sourceIP, segment->getSrcPrt(), segment->getSeqNum(), segment->getAckNum(), segment->getFlags());
-                receiverQueue.push(std::move(segment));
+                if(error_test.dropPacket(0.9)){
+                    TRACE_SRC("SocketHandler[Receiver] - New Packet Valid [IP=%u PORT=%u SEQ=%u ACK=%u FLAG=%s]", sourceIP, segment->getSrcPrt(), segment->getSeqNum(), segment->getAckNum(), flagsToStr(segment->getFlags()).c_str());
+                    receiverQueue.push(std::move(segment));
+                } else {
+                    WARNING_SRC("SocketHandler[Receiver] - Dropped the packet [IP=%u PORT=%u SEQ=%u ACK=%u FLAG=%s]", sourceIP, segment->getSrcPrt(), segment->getSeqNum(), segment->getAckNum(), flagsToStr(segment->getFlags()).c_str());
+                }
             } else {
                 WARNING_SRC("SocketHandler[Receiver] - Dropped Invalid Segment[IP=%u PORT=%u SIZE=%d]", sourceIP, ntohs(senaddr.sin_port), n);
             }
@@ -60,6 +66,7 @@ void SocketHandler::receive() {
 
 void SocketHandler::send() {
     INFO_SRC("SocketHandler[Sender] - Thread Started");
+
     while (running) {
         
         auto opt_item = senderQueue.pop();
@@ -68,8 +75,8 @@ void SocketHandler::send() {
             WARNING_SRC("SocketHandler[Sender] - Sender queue return nullptr, ignoring response");
         }
         else {
-            std::pair<Segment*, std::function<void()>> item = std::move(*opt_item);
-            Segment* segment = item.first;
+            std::pair<std::unique_ptr<Segment>, std::function<void()>> item = std::move(*opt_item);
+            std::unique_ptr<Segment> segment = std::move(item.first);
             struct sockaddr_in senaddr{};
             memset(&senaddr, 0, sizeof(senaddr));
 
@@ -78,17 +85,26 @@ void SocketHandler::send() {
             senaddr.sin_addr.s_addr = htonl(segment->getDestinationIP()); // target IP
             
             uint8_t protocol = 6;
-            std::vector<uint8_t> msg = segment->encode(selfIP, segment->getDestinationIP(), protocol);
 
-            DEBUG_SRC("SocketHandler[Sender] - Preparing packet to send[IP=%u DSTPRT=%u SEQ=%U ACK=%u FLAGS=%u]", segment->getDestinationIP(), segment->getDestPrt(), segment->getSeqNum(), segment->getAckNum(), segment->getFlags());
+            if(segment->getEnd() && segment->getStart() >= 0){
+                segment->setData(std::vector<uint8_t>(sendBuffer.begin() + segment->getStart(), sendBuffer.begin() + segment->getEnd()));
+            }
+
+            std::vector<uint8_t> msg = segment->encode(selfIP, segment->getDestinationIP(), protocol);
+            
+            DEBUG_SRC("SocketHandler[Sender] - Preparing packet to send[IP=%u DSTPRT=%u SEQ=%u ACK=%u FLAGS=%s]", segment->getDestinationIP(), segment->getDestPrt(), segment->getSeqNum(), segment->getAckNum(), flagsToStr(segment->getFlags()).c_str()); 
 
             int n;
             if ((n = sendto(socketfd, reinterpret_cast<const char *>(msg.data()), msg.size(), 0, (sockaddr*)&senaddr, sizeof(senaddr))) < 0) {
                 ERROR_SRC("SocketHandler[Sender] - sendto() failure");
             } else {
                 TRACE_SRC("SocketHandler[Sender] - Successfully sent %i bytes", n);
-                if(item.second) item.second();
+                if(item.second) {
+                    item.second();
+                    TRACE_SRC("SocketHandler[Sender] - set time seent");
+                }
             }
+            
         }
     }
 }
@@ -121,7 +137,7 @@ void SocketHandler::start() {
         ERROR_SRC("SocketHandler[Start] - Set Timeout Failure");
         exit(EXIT_FAILURE);
     }
-
+    
     running = true;
     receiverThread = std::thread(&SocketHandler::receive, this);
     senderThread = std::thread(&SocketHandler::send, this);

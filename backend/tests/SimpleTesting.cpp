@@ -1,17 +1,20 @@
 #include <iostream>
-#include <ctime>
-#include <thread>
+// #include <ctime>
+// #include <thread>
+#include <random>
 
-int main() {
+int main(int argc, const char* argv[]) {
 
-    time_t t = time(NULL);
+    double probability = std::stod(argv[1]);
 
-    std::this_thread::sleep_for (std::chrono::seconds(5));
+    std::random_device rd;
+    std::mt19937 gen(rd());
 
-    time_t now = time(NULL);
+    std::bernoulli_distribution dist(probability);
 
-    time_t temp = 10;
-    std::cout << (std::difftime(now, t) > temp) << std::endl;
+    for (int i = 0; i < 10; i++) {
+        std::cout << dist(gen) << std::endl;
+    }
 
     return 0;
 }

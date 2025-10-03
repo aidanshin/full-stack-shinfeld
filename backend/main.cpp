@@ -9,7 +9,7 @@ int main(int argc, char*argv[]) {
 
     INFO_SRC("main[main] - Initialized logger and enabled file output");
 
-    uint16_t srcPort, dstPort = 0;
+    uint16_t srcPort = 0, dstPort = 0;
     std::string srcIP, dstIP;
 
     if (argc == 3) {

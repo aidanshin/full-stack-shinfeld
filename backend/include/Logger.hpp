@@ -112,8 +112,11 @@ class Logger {
             auto t = std::chrono::system_clock::to_time_t(now);
             std::tm tm{};
             localtime_r(&t, &tm); 
+
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+
             std::ostringstream oss;
-            oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+            oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << "." << std::setfill('0') << std::setw(3) << ms.count();
             return oss.str();
         }
 
@@ -125,7 +128,7 @@ class Logger {
 
             std::ostringstream oss;
 
-            oss << prefix << "_" << std::put_time(&tm, "%y%m%d_%H%M%S") << ".log";
+            oss << "logs/" << prefix << "_" << std::put_time(&tm, "%y%m%d_%H%M%S") << ".log";
             return oss.str();
         }
 
