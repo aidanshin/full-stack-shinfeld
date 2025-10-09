@@ -3,17 +3,20 @@
 
 WebSocketServer::WebSocketServer(
     uint16_t port,
-    const std::string& ip
+    const std::string& ip,
+    ThreadSafeQueue<std::vector<uint8_t>>& recQ,
+    ThreadSafeQueue<std::vector<uint8_t>>& senQ
 ) : 
     port(port),
-    IP(ip)
+    IP(ip),
+    receiverQueue(recQ),
+    senderQueue(senQ)
 {
-    INFO_SRC("WebSocketServer Object Created - %u %s", port, ip.c_str());
+    INFO_SRC("WebSocketServer Object Created - %s:%u", ip.c_str(), port);
 }
 
 bool WebSocketServer::start() {
     if(!socketInit()) {
-        //CRITICAL_SRC() FAILURE
         CRITICAL_SRC("WebSocketServer[start] - Socket Init Failure");
         return false;
     } 
@@ -25,17 +28,15 @@ bool WebSocketServer::start() {
 
     if(!establishHttpConnection()) {
         CRITICAL_SRC("WebSocketServer[Start] - Http Establishment Failure");
-        //CRITICAL_SRC() FAILURE IN HTTP 
-        //CLOSE SOCKET 
         return false;
     }
    
+    //TODO: Start Receiver and Sender Threads
+
     return true;
 }
 
 bool WebSocketServer::end() {
-    //close threads
-    //close socket 
     if(clientSocket >= 0) close(clientSocket);
     if(serverSocket >= 0) close(serverSocket);
     INFO_SRC("WebSocketServer[end] - Closed sockets");
@@ -100,7 +101,7 @@ bool WebSocketServer::establishHttpConnection() {
         ssize_t n;
         if((n = recv(clientSocket, buffer, sizeof(buffer)-1, 0)) > 0) {
             buffer[n] = '\0';
-            // std::cout << buffer << std::endl;
+
             HttpHandler handler;
             if(!handler.validateRequest(std::string(buffer))) {
                 WARNING_SRC("WebSocketServer[establihsHttpConnection] - Invalid request");
@@ -119,38 +120,44 @@ bool WebSocketServer::establishHttpConnection() {
 
 }
 
-void WebSocketServer::tempFunc() {
-    std::cout << "Server Waiting for websocket data" << std::endl;
+bool WebSocketServer::sendData() {
+    INFO_SRC("WebSocketServer[sendData] - Function Called");
 
-    while (true) {
-        uint8_t buffer[1024];
-        ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
-
-        if (bytesReceived <= 0) {
-            std::cout << "Connection closed or error" << std::endl;
-            break;
-        }
+    while (running) {
         
-        std::cout << bytesReceived << std::endl;
+        auto messageToSend = senderQueue.pop();
 
-        std::cout << "Hex dump: ";
-        for (ssize_t i = 0; i < bytesReceived; ++i) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') 
-                      << (int)buffer[i] << " ";
+        if(!messageToSend) {
+             WARNING_SRC("WebSocketServer[sendData] - senderQueue return nullptr, ignoring response");
+             continue;
         }
-        std::cout << std::dec << std::endl;
+       
+        std::vector<uint8_t> msg = std::move(*messageToSend);
 
-        // Print printable characters
-        std::cout << "Printable: ";
-        for (ssize_t i = 0; i < bytesReceived; ++i) {
-            if (std::isprint(buffer[i]))
-                std::cout << (char)buffer[i];
-            else
-                std::cout << ".";
+        ssize_t bytesSent = send(clientSocket, msg.data(), msg.size(), 0);
+        if(bytesSent < 0 ) {
+            ERROR_SRC("WebSocketServer[sendData] - Failure sending data (errno: %d)", errno);
+        } else {
+            TRACE_SRC("WebSocketServer[sendData] - Successfully sent %i bytes", bytesSent);
         }
-        std::cout << std::endl;
-        std::string input;
-        std::cin >> input;
-        if(input == "quit") break;
     }
+
+    return true;
+}
+
+bool WebSocketServer::receiveData() {
+    INFO_SRC("WebSocketServer[receiveData] - Function Called");
+    uint8_t buffer[1024];
+
+    while (running) {
+        ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+        
+        if(bytesReceived <=0) {
+            WARNING_SRC("WebSocketServer[receivedData] - Failure during recv()");
+            continue;
+        }
+        receiverQueue.push(std::vector<uint8_t>(buffer, buffer+bytesReceived));
+    }
+
+    return true;
 }

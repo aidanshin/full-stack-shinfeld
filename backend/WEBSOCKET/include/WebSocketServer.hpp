@@ -3,12 +3,8 @@
 
 #include "Logger.hpp"
 #include "NetCommon.hpp"
-/*
-TODO: Create Connection via TCP Socket
-TODO: Establish HTPP Connection
-TODO: Start Receiving and Sending Threads for communication
-TODO: Close Connection
-*/
+#include "ThreadSafeQueue.hpp"
+
 class WebSocketServer {
     private:
         static constexpr uint16_t DEFAULT_PORT = 8080;
@@ -19,17 +15,32 @@ class WebSocketServer {
         int serverSocket;
         int clientSocket;
 
+        ThreadSafeQueue<std::vector<uint8_t>>& receiverQueue;
+        ThreadSafeQueue<std::vector<uint8_t>>& senderQueue;
+
+        std::thread receiverThread;
+        std::thread senderThread;
+
+        std::atomic<bool> running{false};
+
+
         bool socketInit(int listenQueue=DEFAULT_LISTEN); 
         bool acceptClient();
-        // bool handleClient();
         bool establishHttpConnection();
+
+        bool sendData();
+        bool receiveData();
     public:
 
-        WebSocketServer(uint16_t port=DEFAULT_PORT, const std::string& ip=DEFAULT_IP);
+        WebSocketServer(
+            uint16_t port=DEFAULT_PORT, 
+            const std::string& ip=DEFAULT_IP,
+            ThreadSafeQueue<std::vector<uint8_t>>& recQ,
+            ThreadSafeQueue<std::vector<uint8_t>>& senQ
+        );
 
         bool start();
         bool end();
-        void tempFunc();
 };
 
 #endif

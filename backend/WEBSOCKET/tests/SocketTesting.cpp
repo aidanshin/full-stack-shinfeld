@@ -6,7 +6,6 @@ int main(int argc, const char* arvg[]) {
 
     WebSocketServer server;
     if(!server.start()) CRITICAL_SRC("SocketTesting[main] - start return false");
-    server.tempFunc();
     if(!server.end()) CRITICAL_SRC("SocketTesting[main] - end return false");    
 
     return 0;
