@@ -1,0 +1,28 @@
+:root {
+  font-family: "Courier Prime", monospace;
+  font-weight: 500;
+  font-style: normal;
+
+  color-scheme: dark;
+  color: white;
+  background-color: black;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+* {
+  font-family: "Courier Prime", monospace;
+}
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background-color: black;
+  color: white;
+  overflow: hdiden;
+  font-family: inherit;
+}

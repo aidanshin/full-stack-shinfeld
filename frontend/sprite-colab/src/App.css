@@ -1,0 +1,34 @@
+.app-mainframe {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5%;
+  overflow: hidden;
+}
+
+.app-button {
+  display: flex;
+  width: 25%;
+  height: 10%;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  border: 5px solid white;
+  font-weight: bold;
+  font-size: 200%;
+  transition: transform 0.1s ease-out;
+}
+
+.app-button:hover {
+  background-color: white;
+  color: black;
+  border: 5px solid black;
+}
+
+.app-button:active {
+  transform: translateY(5px);
+}
+

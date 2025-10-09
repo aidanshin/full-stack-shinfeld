@@ -222,4 +222,8 @@ class Logger {
 #define CRITICAL(message, ...) Logger::critical(message, ##__VA_ARGS__)
 
 
+#define RETURN_CRITICAL(message, ...) do {CRITICAL_SRC(message, ##__VA_ARGS__); return false; } while(0)
+#define RETURN_ERROR(message, ...) do {ERROR_SRC(message, ##__VA_ARGS__); return false; } while(0)
+#define RETURN_WARNING(message, ...) do {WARNING_SRC(message, ##__VA_ARGS__); return false; } while(0)
+
 #endif
