@@ -179,3 +179,69 @@ std::unique_ptr<WebSocketFrame> WebSocketFrame::decodeFrame(const std::vector<ui
     );
 }
 
+void WebSocketFrame::printFrame() {
+    using std::setw;
+    using std::setfill;
+    using std::left;
+    using std::right;
+    using std::hex;
+    using std::dec;
+
+    std::cout << std::left; // left-align text labels
+
+    // ─────────────── Header Row 1 ───────────────
+    std::cout << setw(6)  << "FIN" 
+              << "|" << setw(6)  << "RSV1"
+              << "|" << setw(6)  << "RSV2"
+              << "|" << setw(6)  << "RSV3"
+              << "|" << setw(8)  << "OPCODE"
+              << "\n";
+
+    // Values row 1
+    std::cout << setw(6)  << (int)fin_opcode_byte.fin()
+              << "|" << setw(6)  << (int)fin_opcode_byte.rsv1()
+              << "|" << setw(6)  << (int)fin_opcode_byte.rsv2()
+              << "|" << setw(6)  << (int)fin_opcode_byte.rsv3()
+              << "|" << setw(8)  << (int)fin_opcode_byte.opcode()
+              << "\n\n";
+
+    // ─────────────── Header Row 2 ───────────────
+    std::cout << setw(6)  << "MASK"
+              << "|" << setw(18) << "PAYLOAD LEN(7bit)"
+              << "|" << setw(18) << "ACTUAL LEN"
+              << "|" << setw(10) << "MASK KEY"
+              << "\n";
+
+    // Values row 2
+    std::cout << setw(6)  << (int)mask_length_byte.mask()
+              << "|" << setw(18) << (int)mask_length_byte.payload_length()
+              << "|" << setw(18) << payload_length
+              << "| ";
+
+    if (mask_key) {
+        uint8_t maskBytes[4];
+        maskBytes[0] = (mask_key >> 24) & 0xFF;
+        maskBytes[1] = (mask_key >> 16) & 0xFF;
+        maskBytes[2] = (mask_key >> 8) & 0xFF;
+        maskBytes[3] = mask_key & 0xFF;
+
+        std::cout << std::hex << std::setfill('0');
+        for (int i = 0; i < 4; ++i)
+            std::cout << std::setw(2) << (int)maskBytes[i] << " ";
+        std::cout << std::dec;
+        std::cout << std::setfill(' ');
+    } else {
+        std::cout << "None";
+    }
+    std::cout << "\n\n";
+
+    // ─────────────── Payload ───────────────
+    std::cout << "PAYLOAD (" << payload.size() << " bytes): ";
+    for (uint8_t c : payload) {
+        if (std::isprint(c))
+            std::cout << c;       // printable ASCII
+        else
+            std::cout << ".";     // non-printable
+    }
+    std::cout << "\n";
+}

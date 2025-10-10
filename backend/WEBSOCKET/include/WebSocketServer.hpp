@@ -33,14 +33,15 @@ class WebSocketServer {
     public:
 
         WebSocketServer(
-            uint16_t port=DEFAULT_PORT, 
-            const std::string& ip=DEFAULT_IP,
             ThreadSafeQueue<std::vector<uint8_t>>& recQ,
-            ThreadSafeQueue<std::vector<uint8_t>>& senQ
+            ThreadSafeQueue<std::vector<uint8_t>>& senQ,
+            uint16_t port=DEFAULT_PORT, 
+            const std::string& ip=DEFAULT_IP
         );
+        
 
         bool start();
-        bool end();
+        bool stop();
 };
 
 #endif

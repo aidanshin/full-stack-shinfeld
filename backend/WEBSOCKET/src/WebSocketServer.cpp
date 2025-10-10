@@ -2,10 +2,10 @@
 #include "HttpHandler.hpp"
 
 WebSocketServer::WebSocketServer(
-    uint16_t port,
-    const std::string& ip,
     ThreadSafeQueue<std::vector<uint8_t>>& recQ,
-    ThreadSafeQueue<std::vector<uint8_t>>& senQ
+    ThreadSafeQueue<std::vector<uint8_t>>& senQ,
+    uint16_t port,
+    const std::string& ip
 ) : 
     port(port),
     IP(ip),
@@ -30,16 +30,32 @@ bool WebSocketServer::start() {
         CRITICAL_SRC("WebSocketServer[Start] - Http Establishment Failure");
         return false;
     }
-   
-    //TODO: Start Receiver and Sender Threads
+    
+    running = true;
+    senderThread = std::thread(&WebSocketServer::sendData, this);
+    receiverThread = std::thread(&WebSocketServer::receiveData, this);
+    INFO_SRC("WebSocketServer[Start] - Connection Established - Sender and Receiver Threads have started");
 
     return true;
 }
 
-bool WebSocketServer::end() {
+bool WebSocketServer::stop() {
+    INFO_SRC("WebSocketServer[stop] - Closing down sockets and threads");
+    running = false;
+    senderQueue.close();
+    receiverQueue.close();
+
+    shutdown(clientSocket, SHUT_RDWR);
+    shutdown(serverSocket, SHUT_RDWR);
+
+    if(receiverThread.joinable()) receiverThread.join();
+    if(senderThread.joinable()) senderThread.join();
+
     if(clientSocket >= 0) close(clientSocket);
     if(serverSocket >= 0) close(serverSocket);
-    INFO_SRC("WebSocketServer[end] - Closed sockets");
+
+    INFO_SRC("WebSocketServer[end] - Closed sockets and threads");
+
     return true;
 }
 
@@ -138,7 +154,7 @@ bool WebSocketServer::sendData() {
         if(bytesSent < 0 ) {
             ERROR_SRC("WebSocketServer[sendData] - Failure sending data (errno: %d)", errno);
         } else {
-            TRACE_SRC("WebSocketServer[sendData] - Successfully sent %i bytes", bytesSent);
+            TRACE_SRC("WebSocketServer[sendData] - Successfully sent %zd bytes", bytesSent);
         }
     }
 
@@ -154,9 +170,10 @@ bool WebSocketServer::receiveData() {
         
         if(bytesReceived <=0) {
             WARNING_SRC("WebSocketServer[receivedData] - Failure during recv()");
-            continue;
+            break;
         }
         receiverQueue.push(std::vector<uint8_t>(buffer, buffer+bytesReceived));
+        TRACE_SRC("WebSocketServer[receiveData] - Received %zd bytes, pushed to queue", bytesReceived);
     }
 
     return true;

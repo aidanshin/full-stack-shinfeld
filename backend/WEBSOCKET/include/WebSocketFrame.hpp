@@ -2,6 +2,8 @@
 #define WEBSOCKETFRAME_HPP
 
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
 class WebSocketFrame {
     private:
@@ -63,6 +65,8 @@ class WebSocketFrame {
         void removeMask();
 
         std::vector<uint8_t> encodeFrame();
-        static std::unique_ptr<WebSocketFrame> decodeFrame(const std::vector<uint8_t>& frame);        
+        static std::unique_ptr<WebSocketFrame> decodeFrame(const std::vector<uint8_t>& frame);  
+        
+        void printFrame();
 };
 #endif
