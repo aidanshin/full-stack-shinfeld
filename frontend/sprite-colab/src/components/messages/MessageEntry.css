@@ -1,0 +1,26 @@
+.message-entry{
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    gap: 5%;
+
+}
+
+.grouped {
+    border: 2px solid white;
+
+}
+.message-userId {
+    display: flex;
+    width: 10%;
+    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-text {
+    display:flex;
+    width: 90%;
+    align-items: center;
+    justify-content: left;
+}

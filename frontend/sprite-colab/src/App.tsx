@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import WebSocketApi from './api/WebSocketApi';
-
+import MessageList from './components/messages/MessageList';
+import Input from './components/Input';
 import './App.css'
 
 
@@ -25,21 +26,26 @@ function App() {
     } 
   }
 
+  const onSendMessage = (msg : string) => {
+    console.log(msg);
+  }
+
   return (
     <>
       <div className='app-mainframe'>
-        <button 
-          className='app-button'
-          onClick={handleConnect}  
-        >
-          Connect
-        </button>
-        <button 
-          className='app-button'
-          onClick={sendMessage}  
-        >
-          Send
-        </button>
+        <div className='app-sidebar'>
+          <div className='app-user'>Aidan</div>
+          <div className='app-user'>Aidan</div>
+          
+        </div>
+        <div className='app-maindisplay'>
+          <div className='app-messages'>
+            <MessageList currentUserId='userA'/>
+          </div>
+          <div className='app-input'>
+            <Input onSendMessage={onSendMessage} />
+          </div>
+        </div>
       </div>
     </>
   )

@@ -1,12 +1,55 @@
 .app-mainframe {
   display: flex;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 5%;
+  flex-direction: row;
   overflow: hidden;
+  border: 3px solid white;
+}
+
+.app-sidebar {
+  display: flex;
+  height: 100%;
+  width: 30%;
+  flex-direction: column;
+}
+
+.app-maindisplay {
+  display: flex;
+  height: 100%;
+  width: 70%;
+  flex-direction: column;
+  border-left: 3px solid white;
+  cursor: none;
+}
+
+.app-user {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-messages {
+  display: flex;
+  height: 75%;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+.app-input {
+  display: flex;
+  height: 25%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-top: 3px solid white;
 }
 
 .app-button {
@@ -32,3 +75,6 @@
   transform: translateY(5px);
 }
 
+* {
+  box-sizing: border-box;
+}
