@@ -1,0 +1,39 @@
+.user-mainframe {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    flex-direction: column;
+    gap: 5%;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    padding-top: 5%;
+}
+
+.user-entry {
+    position: relative;
+    display: flex;
+    width: 75%;
+    font-size: 135%;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    padding-top: 2%;
+    padding-bottom: 2%;
+    
+}
+
+.user-name {
+    font-weight: 700;
+}
+
+.user-messageCount {
+    position: absolute;
+    right: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+}

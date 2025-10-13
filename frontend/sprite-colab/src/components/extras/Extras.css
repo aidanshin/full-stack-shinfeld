@@ -1,0 +1,20 @@
+.extras-mainframe {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: space-evenly;
+    padding-bottom: 5%;
+    font-size: 150%;
+}
+
+.extras-entry {
+    display: flex;
+    width: 75%;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid white;
+}

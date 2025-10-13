@@ -20,9 +20,11 @@ class ThreadSafeQueue {
         
         template <typename U>
         void push(U&& value) {
-            std::lock_guard<std::mutex> lock(mtx);
-            if (closed) throw std::runtime_error("Queue is closed");
-            q.push(std::forward<U>(value));
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                if (closed) throw std::runtime_error("Queue is closed");
+                q.push(std::forward<U>(value));
+            }
             cv.notify_one();
         }
 
@@ -45,8 +47,10 @@ class ThreadSafeQueue {
         }
 
         void close() {
-            std::lock_guard<std::mutex> lock(mtx);
-            closed = true;
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                closed = true;
+            }
             cv.notify_all();
         }
 

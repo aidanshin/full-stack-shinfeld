@@ -1,0 +1,57 @@
+.input-wrapper {
+  display: flex;
+  width: 95%;
+  height: 95%;
+  /* border: 2px solid white; */
+  cursor: text;
+  flex-direction: row;
+  gap: 5%;
+  font-size: 110%;
+}
+
+.input-display {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  width: 90%;
+  height: 100%;
+  /* font-size: 100%; */
+
+  padding-top: 0.3%;
+  
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+
+
+  
+  color: white;
+  outline: none;
+  
+  /* border: none; */
+  white-space: pre-wrap;
+  word-break: break-word;
+  caret-color: white; /* makes the browser caret white */
+}
+
+/* Optional: blinking effect for caret */
+.input-display:focus {
+  animation: blink-caret 1s step-end infinite;
+}
+
+@keyframes blink-caret {
+  50% {
+    caret-color: transparent;
+  }
+}
+
+.input-username {
+  display: flex;
+  width: 10%;
+  height: 15%;
+  font-weight: 700;
+  align-items: top;
+  justify-content: center;
+  border: 2px solid white;
+}

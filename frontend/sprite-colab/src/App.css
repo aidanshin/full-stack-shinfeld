@@ -16,13 +16,28 @@
   flex-direction: column;
 }
 
+.app-users {
+  display: flex;
+  height: 75%;
+  width: 100%;
+  flex-direction: column;
+}
+
+.app-extras {
+  display: flex;
+  height: 25%;
+  width: 100%;
+  flex-direction: column;
+  border-top: 3px solid white;
+}
+
 .app-maindisplay {
   display: flex;
   height: 100%;
   width: 70%;
   flex-direction: column;
   border-left: 3px solid white;
-  cursor: none;
+  /* cursor: none; */
 }
 
 .app-user {
