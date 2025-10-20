@@ -1,6 +1,11 @@
 #include "Connection.hpp"
 #include "Logger.hpp"
 
+
+// TODO: FUNCTION TO CREATE NEW CLIENT CONNECTIONS 
+// TODO: ONLY ACCEPTS BUT CANNOT NOT CREATE NEW WHILE RUNNING
+
+
 //TODO: Change all client reference to auto& client = client->second so do not have to call client->second ...
 static uint32_t convertIpAddress(const std::string& ip) {
     struct in_addr addr;
@@ -256,6 +261,9 @@ void Connection::messageResendCheck() {
     sleep(3); //FIXME: REMOVE THIS BAD BOY
 }
 
+
+//TODO: REFRACTOR CODE TO MAKE THIS FUNCTION SMALLER AND IMPLEMENT FUNCTIONAL PROGRAMMING 
+// FUNCTION FOR EACH STATE SO WE CAN SPLIT IT UP AND CAN FIND ERRORS EASIER
 void Connection::communicate() {
 
     INFO_SRC("Connection[communicate] - Function started");
