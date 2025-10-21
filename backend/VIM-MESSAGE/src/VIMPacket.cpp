@@ -142,6 +142,7 @@ std::optional<VIMPacket> VIMPacket::decodePacket(std::vector<uint8_t>& packet) {
 }
 
 std::optional<VIMPacket> VIMPacket::decodeMsgPacket(std::vector<uint8_t>& packet) {
+    if(packet.size() <= HEADER_SIZE) return std::nullopt;
     uint8_t msg_type = packet[0];
     uint32_t msg_userId = (packet[1] << 24) | (packet[2] << 16) | (packet[3] << 8) | packet[4];
     uint16_t msg_msgId = (packet[5] << 8) | packet[6];
@@ -151,7 +152,7 @@ std::optional<VIMPacket> VIMPacket::decodeMsgPacket(std::vector<uint8_t>& packet
 
 
 std::optional<VIMPacket> VIMPacket::decodeUserCreation(std::vector<uint8_t>& packet) {
-    if (packet.size() < HEADER_SIZE) return std::nullopt;
+    if (packet.size() != HEADER_SIZE) return std::nullopt;
     uint8_t msg_type = packet[0];
     uint32_t msg_IP = (packet[1] << 24) | (packet[2] << 16) | (packet[3] << 8) | packet[4];
     uint16_t msg_port = (packet[5] << 8) | packet[6];
@@ -159,7 +160,7 @@ std::optional<VIMPacket> VIMPacket::decodeUserCreation(std::vector<uint8_t>& pac
 }
 
 std::optional<VIMPacket> VIMPacket::decodeUserConfirmation(std::vector<uint8_t>& packet) {
-    if(packet.size() < USER_CONFIRMATION_SIZE) return std::nullopt;
+    if(packet.size() != USER_CONFIRMATION_SIZE) return std::nullopt;
     uint8_t msg_type = packet[0];
     uint32_t msg_IP = (packet[1] << 24) | (packet[2] << 16) | (packet[3] << 8) | packet[4];
     uint16_t msg_port = (packet[5] << 8) | packet[6];
