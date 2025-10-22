@@ -56,6 +56,7 @@ class VIMPacket {
 
         static std::optional<VIMPacket> decodePacket(std::vector<uint8_t>& packet);
 
+        void printPacket();
 };
 
 

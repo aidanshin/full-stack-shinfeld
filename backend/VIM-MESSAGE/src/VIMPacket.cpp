@@ -35,10 +35,12 @@ Total Bytes = 11
 
 */
 
-//TODO: Create Message -> returns encoded bytes of data (unique_ptr)
-//TODO: Decode Message -> takes bytes return bool if successful, pass in a message object that wil be written to
+// TODO MAKE SURE ALL BYTES ARE IN CORRECT ORDRE FOR PORTS AND IP REGARINDG HOST ORDER 
 
 #include "VIMPacket.hpp"
+#include <iostream>
+#include <arpa/inet.h>
+#include <stdio.h>
 
 VIMPacket::VIMPacket(
     uint8_t type,
@@ -166,4 +168,20 @@ std::optional<VIMPacket> VIMPacket::decodeUserConfirmation(std::vector<uint8_t>&
     uint16_t msg_port = (packet[5] << 8) | packet[6];
     uint32_t msg_userId = (packet[7] << 24) | (packet[8] << 16) | (packet[9] << 8) | packet[10];
     return std::make_optional(VIMPacket(msg_type, msg_IP, msg_port, msg_userId));
+}
+
+
+void VIMPacket::printPacket() {
+    std::cout << "\nPRINT PACKET" << std::endl;
+    std::cout << "Type: " << static_cast<int>(type) << std::endl;
+    std::cout << "UserId: " << user_id << std::endl;
+    std::cout << "MsgId: " << msg_id << std::endl;
+    std::cout << "IP: " << ip << std::endl;
+    std::cout << "Port: " << port << std::endl;
+    
+    std::cout << "Message: ";
+    for(uint8_t byte : msg_data) {
+        std::cout << byte << " ";
+    }
+    std::cout << std::endl;
 }
