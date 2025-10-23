@@ -1,11 +1,11 @@
 import {useState, useRef} from 'react';
 import WebSocketApi from './api/WebSocketApi';
+import VIMPacket from './api/VIMPacketApi';
 import MessageList from './components/messages/MessageList';
 import Input from './components/input/Input';
 import Users from './components/users/Users';
 import Extras from './components/extras/Extras';
 import './App.css'
-
 
 function App() {
   const [wsApi, setWsApi] = useState<WebSocketApi | null>(null);
@@ -15,16 +15,15 @@ function App() {
       const api = new WebSocketApi("ws://localhost:8080");
       setWsApi(api);
 
-      api.connect((msg: string) => {
-        console.log("Received from server:", msg);
-      });
+      api.connect();
 
     }
   }
 
   const sendMessage = () => {
     if(wsApi) {
-      wsApi.send("Hello, this is the react server and I would like to connect");
+      const packet : Uint8Array | undefined = VIMPacket.createMsgPacket(1,1,1, "Hello from react");
+      if(packet) wsApi.send(packet);
     } 
   }
 
@@ -36,15 +35,6 @@ function App() {
   { name: 'Aidan', hasNewMessage: true },
   { name: 'Emily', hasNewMessage: false },
   { name: 'Carlos', hasNewMessage: true },
-  // { name: 'Aidan', hasNewMessage: true },
-  // { name: 'Emily', hasNewMessage: false },
-  // { name: 'Carlos', hasNewMessage: true },
-  // { name: 'Aidan', hasNewMessage: true },
-  // { name: 'Emily', hasNewMessage: false },
-  // { name: 'Carlos', hasNewMessage: true },
-  // { name: 'Aidan', hasNewMessage: true },
-  // { name: 'Emily', hasNewMessage: false },
-  // { name: 'Carlos', hasNewMessage: true },
 ]
 
   return (
@@ -55,6 +45,8 @@ function App() {
             <Users users={usersList}/>
           </div>
           <div className='app-extras'>
+            <button onClick={handleConnect}>Connect</button>
+            <button onClick={sendMessage}>Message</button>
             <Extras />
           </div>
         </div>

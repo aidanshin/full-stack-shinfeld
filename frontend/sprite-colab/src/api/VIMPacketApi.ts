@@ -37,7 +37,7 @@ export default class VIMPacket {
     get port(): number {return this.#port;}
     get msg_data(): string {return this.#msg_data;}
 
-    static ipToBytes(ip: string): Uint8Array | undefined{
+    private static  ipToBytes(ip: string): Uint8Array | undefined{
         const vals = ip.split('.').map(p => parseInt(p, 10));
         if (vals.length !== 4 || vals.some(p => p < 0 || p > 255)) {
             console.error(`Invalid IP address: ${ip}`);
@@ -46,7 +46,7 @@ export default class VIMPacket {
         return new Uint8Array(vals);
     }
 
-    static numberToBytes(val: number, size: number): Uint8Array {
+    private static numberToBytes(val: number, size: number): Uint8Array {
         const buf = new Uint8Array(size);
         for(let i = 0; i < size; ++i) {
             buf[i] = (val >> (8*(size-(1+i)))) & 0xFF;
@@ -95,7 +95,7 @@ export default class VIMPacket {
         }
     }
 
-    static decodeMsgPacket(payload: Uint8Array): VIMPacket | undefined {
+    private static decodeMsgPacket(payload: Uint8Array): VIMPacket | undefined {
         if (payload.length <= this.HEADER_SIZE) return undefined;
         const type = payload[0] as PacketType;
         const userId = (payload[1] << 24) | (payload[2] << 16) | (payload[3] << 8) | payload[4];
@@ -106,7 +106,7 @@ export default class VIMPacket {
         return new VIMPacket(type, userId, msgId, undefined, undefined, msgString);
     }
 
-    static decodeUserCreation(payload: Uint8Array): VIMPacket | undefined {
+    private static decodeUserCreation(payload: Uint8Array): VIMPacket | undefined {
         if(payload.length != this.HEADER_SIZE) return undefined;
         const type = payload[0] as PacketType;
         const ipStr = `${payload[1]}.${payload[2]}.${payload[3]}.${payload[4]}`; 
@@ -114,7 +114,7 @@ export default class VIMPacket {
         return new VIMPacket(type, undefined, undefined, ipStr, port, undefined);
     }
 
-    static decodeUserConfirmation(payload: Uint8Array): VIMPacket | undefined {
+    private static decodeUserConfirmation(payload: Uint8Array): VIMPacket | undefined {
         if(payload.length != this.USER_CONFIRMATION_SIZE) return undefined;
         const type = payload[0] as PacketType;
         const ipStr = `${payload[1]}.${payload[2]}.${payload[3]}.${payload[4]}`; 

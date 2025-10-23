@@ -1,3 +1,5 @@
+import { handlePacket } from "./PacketHandler";
+
 export default class WebSocketApi {
     private socket: WebSocket | null = null;
 
@@ -7,16 +9,21 @@ export default class WebSocketApi {
         this.url = url;
     }
     
-    connect(onMessage?: (msg: string) => void) {
+    connect() {
         this.socket = new WebSocket(this.url);
+        this.socket.binaryType = "arraybuffer";
 
         this.socket.onopen = () => {
             console.log("WebSocket Connected:", this.url);
         };
 
         this.socket.onmessage = (event) => {
-            console.log("Message from server:", event.data);
-            if (onMessage) onMessage(event.data);
+            if(event.data instanceof ArrayBuffer) {
+                const data = new Uint8Array(event.data);
+                handlePacket(data);
+            } else if (typeof event.data === "string") {
+                console.log("Message from server:", event.data);
+            }
         };
 
         this.socket.onerror = (error) => {
@@ -28,10 +35,10 @@ export default class WebSocketApi {
         };
     }
 
-    send(message: string) {
+    send(packet: Uint8Array) {
         if (this.socket && this.socket.readyState == WebSocket.OPEN) {
-            console.log("Sending Message:", message);
-            this.socket.send(message);
+            console.log("Sending packet", packet);
+            this.socket.send(packet);
         } else {
             console.warn("WebSocket not connected.");
         }
