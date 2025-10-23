@@ -188,7 +188,7 @@ void WebSocketFrame::printFrame() {
     using std::dec;
 
     std::cout << std::left; // left-align text labels
-
+    std::cout << dec << setfill(' ');
     // ─────────────── Header Row 1 ───────────────
     std::cout << setw(6)  << "FIN" 
               << "|" << setw(6)  << "RSV1"
@@ -238,10 +238,11 @@ void WebSocketFrame::printFrame() {
     // ─────────────── Payload ───────────────
     std::cout << "PAYLOAD (" << payload.size() << " bytes): ";
     for (uint8_t c : payload) {
-        if (std::isprint(c))
-            std::cout << c;       // printable ASCII
-        else
-            std::cout << ".";     // non-printable
+        std::cout << "0x"
+                  << std::hex << std::uppercase
+                  << std::setw(2) << std::setfill('0')
+                  << static_cast<int>(c) << " ";
     }
-    std::cout << "\n";
+
+    std::cout << std::dec << "\n";
 }

@@ -71,9 +71,9 @@ VIMPacket::VIMPacket(
     uint32_t userId
 ) : 
     type(type),
+    user_id(userId),
     ip(IP),
-    port(port),
-    user_id(userId)
+    port(port)
 {}
 
 uint8_t VIMPacket::getType() const {return type;}
@@ -181,7 +181,7 @@ void VIMPacket::printPacket() {
     
     std::cout << "Message: ";
     for(uint8_t byte : msg_data) {
-        std::cout << byte << " ";
+        std::cout << byte;
     }
     std::cout << std::endl;
 }

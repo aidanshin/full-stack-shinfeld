@@ -14,9 +14,7 @@ function App() {
     if(!wsApi) {
       const api = new WebSocketApi("ws://localhost:8080");
       setWsApi(api);
-
       api.connect();
-
     }
   }
 

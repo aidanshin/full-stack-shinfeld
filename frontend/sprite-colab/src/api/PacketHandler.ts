@@ -4,7 +4,8 @@ export function handlePacket(data: Uint8Array) {
     const packet = VIMPacket.decodePacket(data);
 
     if (!packet) return;
-
+    console.log(packet);
+    
     switch (packet.type){
         case 1:
             console.log(packet.msg_data);
