@@ -28,7 +28,7 @@
   height: 25%;
   width: 100%;
   flex-direction: column;
-  border-top: 3px solid white;
+  /* border-top: 3px solid white; */
 }
 
 .app-maindisplay {

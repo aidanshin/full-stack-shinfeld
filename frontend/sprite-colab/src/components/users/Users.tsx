@@ -2,7 +2,7 @@ import React from 'react'
 import './Users.css'
 
 type User = {
-  name: string
+  id: number
   hasNewMessage: boolean
 }
 
@@ -16,8 +16,8 @@ const Users: React.FC<UsersProps> = ({users}) => {
       {users.map((user, index) => (
         <div key={index} className="user-entry">
           
-          <div className='user-name'>{user.name}</div>
-        {user.hasNewMessage && <div className='user-messageCount'>{5}</div>}
+          <div className='user-name'>{user.id}</div>
+        {user.hasNewMessage && <div className='user-messageCount'>{"!"}</div>}
         </div>
       ))}
     </div>

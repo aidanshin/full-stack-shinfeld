@@ -27,11 +27,11 @@ class Connection {
         
         ThreadSafeQueue<std::unique_ptr<Segment>> receiverQueue;
         ThreadSafeQueue<std::pair<std::unique_ptr<Segment>, std::function<void()>>> senderQueue;
-        ThreadSafeQueue<std::string>& inputQueue;
+        ThreadSafeQueue<std::vector<uint8_t>>& inputQueue;
         
         std::unique_ptr<SocketHandler> socketHandler;
         
-        std::map<uint16_t, Client> clients;
+        std::map<uint16_t, Client>& clients;
         std::vector<uint8_t> sendBuffer; 
         
 
@@ -58,13 +58,15 @@ class Connection {
             uint16_t destPort,
             std::string srcIPstr,
             std::string destIPstr,
-            ThreadSafeQueue<std::string>& q
+            ThreadSafeQueue<std::vector<uint8_t>>& q,
+            std::map<uint16_t, Client>& clientsDict
         );
 
         Connection (
             uint16_t srcPort,
             std::string srcIPstr,
-            ThreadSafeQueue<std::string>& q
+            ThreadSafeQueue<std::vector<uint8_t>>& q,
+            std::map<uint16_t, Client>& clientsDict
         );
 
         Connection() = delete;

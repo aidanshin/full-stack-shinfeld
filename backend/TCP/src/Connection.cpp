@@ -18,14 +18,16 @@ Connection::Connection (
     uint16_t destPort,
     std::string srcIPstr,
     std::string destIPstr,
-    ThreadSafeQueue<std::string>& q
+    ThreadSafeQueue<std::vector<uint8_t>>& q,
+    std::map<uint16_t, Client>& clientsDict
 ) 
 :
     source_port(srcPort),
     destination_port(destPort),
     source_ip_str(srcIPstr),
     destination_ip_str(destIPstr),
-    inputQueue(q)
+    inputQueue(q),
+    clients(clientsDict)
 {
     sourceIP = convertIpAddress(source_ip_str);
     destinationIP = convertIpAddress(destination_ip_str);
@@ -35,12 +37,14 @@ Connection::Connection (
 Connection::Connection (
     uint16_t srcPort,
     std::string srcIPstr,
-    ThreadSafeQueue<std::string>& q
+    ThreadSafeQueue<std::vector<uint8_t>>& q,
+    std::map<uint16_t, Client>& clientsDict
 )
 :
     source_port(srcPort),
     source_ip_str(srcIPstr),
-    inputQueue(q)
+    inputQueue(q),
+    clients(clientsDict)
 {
     sourceIP = convertIpAddress(source_ip_str);
     
@@ -276,7 +280,7 @@ void Connection::communicate() {
     }
     
     std::unique_ptr<Segment> seg;
-    std::string input;
+    std::vector<uint8_t> input;
     while (running) {
         if (receiverQueue.tryPop(seg)) {
             if(seg->getDestPrt() != source_port) {
@@ -431,10 +435,13 @@ void Connection::communicate() {
                                 if (!seg->getData().empty()) {
                                     INFO_SRC("Connection[communicate] - Received packet[IP=%u PORT=%u SEQ=%u ACK=%u SIZE=%zu] with data -> attempting to write to file", client.getIP(), client.getPort(), seg->getSeqNum(), seg->getAckNum(), seg->getData().size());
                                     
-                                    for(uint8_t byte : seg->getData()) {
-                                        std::cout << byte;
-                                    }
-                                    std::cout << std::endl;
+                                    // for(uint8_t byte : seg->getData()) {
+                                    //     std::cout << byte;
+                                    // }
+                                    // std::cout << std::endl;
+                                    
+                                    std::vector<uint8_t> packetData = seg->getData();
+                                    client.receivedData.push(std::move(packetData));
                                     data_written = client.writeFile(std::move(seg->getData()));
                                     
                                     uint32_t new_seq_num = seg->getSeqNum() + data_written;
@@ -444,10 +451,14 @@ void Connection::communicate() {
                                         while (client.popItemMessageBuffer(new_seq_num, outOfOrderSegment)) {
                                             if(outOfOrderSegment->getFlags() == static_cast<uint8_t>(FLAGS::ACK) && outOfOrderSegment->getData().size() > 0){
                                                 TRACE_SRC("Connection[communicate] - Attempting to write out of order packet[IP=%u PORT=%u SEQ=%u ACK=%u SIZE=%zu] to file", client.getIP(), client.getPort(), outOfOrderSegment->getSeqNum(), outOfOrderSegment->getAckNum(), outOfOrderSegment->getData().size());
-                                                for(uint8_t byte : outOfOrderSegment->getData()) {
-                                                    std::cout << byte;
-                                                }
-                                                std::cout << std::endl;
+                                                
+                                                // for(uint8_t byte : outOfOrderSegment->getData()) {
+                                                //     std::cout << byte;
+                                                // }
+                                                // std::cout << std::endl;
+
+                                                packetData = outOfOrderSegment->getData();
+                                                client.receivedData.push(std::move(packetData));
                                                 data_written = client.writeFile(std::move(outOfOrderSegment->getData()));
                                                 new_seq_num += data_written;
                                             }

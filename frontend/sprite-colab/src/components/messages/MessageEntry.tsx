@@ -2,7 +2,7 @@ import React from 'react'
 import './MessageEntry.css'
 
 type MessageEntryProps = {
-    userId: string
+    userId: number 
     text: string
     fromCurrentUser: boolean
     isGrouped: boolean

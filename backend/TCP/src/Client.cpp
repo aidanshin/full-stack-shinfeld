@@ -2,7 +2,7 @@
 #include "Flags.hpp"
 #include "Segment.hpp"
 #include "Logger.hpp"
-
+#include "ThreadSafeQueue.hpp"
 Client::Client(
     uint16_t port,
     uint32_t IP,
@@ -10,7 +10,7 @@ Client::Client(
     uint32_t expectedAck,
     uint32_t lastAck,
     uint8_t state,  
-    const std::string& filePath          
+    const std::string& filePath
 ) : port(port), 
     IP(IP), 
     expected_sequence(expectedSeq), 

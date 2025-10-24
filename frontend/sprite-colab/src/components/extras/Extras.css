@@ -1,12 +1,13 @@
 .extras-mainframe {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     height: 100%;
     width: 100%;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: baseline;
     padding-bottom: 5%;
     font-size: 150%;
+    gap: 10px;
 }
 
 .extras-entry {
@@ -15,6 +16,18 @@
 
     align-items: center;
     justify-content: center;
-
+    background-color: black;
+    color:white;
+    font-size: 1.5rem;
     border: 2px solid white;
+    transition: transform 0.2s ease;
+}
+
+.extras-entry:hover {
+    background-color: white;
+    color: black;
+}
+
+.extras-entry:active {
+    transform: translateY(2px);
 }

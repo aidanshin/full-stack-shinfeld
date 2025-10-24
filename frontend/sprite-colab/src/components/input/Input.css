@@ -49,9 +49,9 @@
 .input-username {
   display: flex;
   width: 10%;
-  height: 15%;
+  height: 13%;
   font-weight: 700;
-  align-items: top;
+  align-items: center;
   justify-content: center;
   border: 2px solid white;
 }

@@ -1,6 +1,11 @@
 import VIMPacket from "./VIMPacketApi";
 
-export function handlePacket(data: Uint8Array) {
+type User = {
+    id: number,
+    hasNewMessage: boolean
+}
+
+export function handlePacket(data: Uint8Array, onMessage?: (packet: VIMPacket) => void, addUser?: (user: User) => void) {
     const packet = VIMPacket.decodePacket(data);
 
     if (!packet) return;
@@ -8,16 +13,17 @@ export function handlePacket(data: Uint8Array) {
     
     switch (packet.type){
         case 1:
-            console.log(packet.msg_data);
-            break;
         case 2: 
-            console.log(packet.msg_data);
+            if(onMessage) onMessage(packet);
             break;
-        case 3: 
+        case 3:
+            //User Request 
             console.log(packet.ip, packet.port);
             break;
         case 4:
-            console.log(packet.ip, packet.port, packet.userId);
+            if (addUser) {
+                addUser({id: packet.userId, hasNewMessage: false});
+            }
             break;
         default:
             console.log("Unkown packet type");

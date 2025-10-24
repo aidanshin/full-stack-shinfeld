@@ -1,4 +1,10 @@
 import { handlePacket } from "./PacketHandler";
+import type VIMPacket from "./VIMPacketApi";
+
+type User = {
+    id: number,
+    hasNewMessage: boolean
+}
 
 export default class WebSocketApi {
     private socket: WebSocket | null = null;
@@ -9,7 +15,7 @@ export default class WebSocketApi {
         this.url = url;
     }
     
-    connect() {
+    connect(onPacket?: (packet: VIMPacket) => void, addUser?: (user: User) => void) {
         this.socket = new WebSocket(this.url);
         this.socket.binaryType = "arraybuffer";
 
@@ -20,7 +26,7 @@ export default class WebSocketApi {
         this.socket.onmessage = (event) => {
             if(event.data instanceof ArrayBuffer) {
                 const data = new Uint8Array(event.data);
-                handlePacket(data);
+                handlePacket(data, onPacket, addUser);
             } else if (typeof event.data === "string") {
                 console.log("Message from server:", event.data);
             }

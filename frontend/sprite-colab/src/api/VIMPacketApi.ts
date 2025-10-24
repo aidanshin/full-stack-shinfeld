@@ -54,14 +54,14 @@ export default class VIMPacket {
         return buf;
     }
 
-    static createMsgPacket(type: PacketType, userId: number, msgId: number, data: string) : Uint8Array | undefined {
+    static createMsgPacket(userId: number, msgId: number, data: string) : Uint8Array | undefined {
         if(userId > 0xFFFFFFFF || userId <= 0) return undefined;
         if(msgId > 0xFFFF || msgId <= 0) return undefined; 
 
         const msgBytes = this.encoder.encode(data);
         const packet = new Uint8Array(this.HEADER_SIZE + msgBytes.length);
 
-        packet[0] = type;
+        packet[0] = 1;
         packet.set(this.numberToBytes(userId, 4), 1);
         packet.set(this.numberToBytes(msgId, 2), 5);
         packet.set(msgBytes, this.HEADER_SIZE);
@@ -69,18 +69,32 @@ export default class VIMPacket {
         return packet;
     }
     
-    static createUserPacket(type: PacketType, ip: string, port: number) : Uint8Array | undefined {
+    static createUserPacket(ip: string, port: number) : Uint8Array | undefined {
         if(port > 0xFFFF || port < 0) return undefined;
 
         const ipBytes = this.ipToBytes(ip);
         if(!ipBytes) return undefined;
 
         const packet = new Uint8Array(this.HEADER_SIZE);
-        const portBytes = this.numberToBytes(port, 2);
 
-        packet[0] = type;
+        packet[0] = 3;
         packet.set(ipBytes, 1);
-        packet.set(portBytes, 5);
+        packet.set(this.numberToBytes(port, 2), 5);
+
+        return packet;
+    }
+
+    static createUserConfirmationPacket(ip: string, port: number, userId: number) : Uint8Array | undefined {
+        if (port > 0xFFFF || port < 0) return undefined;
+        if(userId > 0xFFFFFFFF || userId <= 0) return undefined;
+        const ipBytes = this.ipToBytes(ip);
+        if(!ipBytes) return undefined;
+        const packet = new Uint8Array(this.USER_CONFIRMATION_SIZE);
+        
+        packet[0] = 4;
+        packet.set(ipBytes, 1);
+        packet.set(this.numberToBytes(port, 2), 5);
+        packet.set(this.numberToBytes(userId, 4), 7);
 
         return packet;
     }

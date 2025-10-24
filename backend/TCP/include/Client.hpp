@@ -50,7 +50,8 @@ class Client {
         Client& operator=(const Client&) = delete;
         // Client(Client&&) noexcept = default;
         // Client& operator = (Client&&) noexcept = default;
-
+        ThreadSafeQueue<std::vector<uint8_t>> receivedData;
+        
         explicit Client(
             uint16_t port,
             uint32_t IP,

@@ -28,6 +28,17 @@ const Input: React.FC<InputProps> = ({ onSendMessage, username }) => {
         contentEditable="plaintext-only"
         className="input-display"
         onInput={handleInput}
+        onKeyDown={(e) => {
+          if(e.key === "Enter") {
+            e.preventDefault();
+            
+            if (inputRef.current) {
+              const text = inputRef.current.textContent.trim();
+              onSendMessage(text);
+              inputRef.current.textContent = "";
+            }
+          }
+        }}
         suppressContentEditableWarning
       >
       </div>

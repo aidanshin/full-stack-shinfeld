@@ -36,7 +36,7 @@ void mainLogic(ThreadSafeQueue<std::vector<uint8_t>>& receiverQueue, ThreadSafeQ
                 struct in_addr addr;
                 inet_pton(AF_INET, ip, &addr);
                 uint32_t ip_val = htonl(addr.s_addr);
-                payload = VIMPacket::createPacket(4, ip_val, 50000, 1); 
+                payload = VIMPacket::createPacket(4, ip_val, 50000, 2); 
             }
             else {
                 std::vector<uint8_t> payloadToSend(input.begin(), input.end());

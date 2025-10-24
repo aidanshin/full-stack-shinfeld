@@ -1,47 +1,49 @@
-import React, { useRef, useEffect } from 'react'
-import messages from '../../data/messages.json'
+import React, { useRef, useEffect, useState } from 'react'
+// import messages from '../../data/messages.json'
+import VIMPacket from '../../api/VIMPacketApi'
 import MessageEntry from './MessageEntry'
 import './MessageList.css'
 
-type Message = {
-  id: number
-  userId: string
-  message: string
-}
+// type Message = {
+//   id: number
+//   userId: string
+//   message: string
+// }
 
 type MessageListProps = {
-  currentUserId: string
+  currentUserId: number
+  messages: VIMPacket[]
 }
 
-const typedMessages = [
-  ...messages as Message[],
-  ...messages as Message[], 
-  ...messages as Message[],
-]
+// const typedMessages = [
+//   ...messages as Message[],
+//   ...messages as Message[], 
+//   ...messages as Message[],
+// ]
 
-const MessageList: React.FC<MessageListProps> = ({ currentUserId }) => {
+const MessageList: React.FC<MessageListProps> = ({ currentUserId, messages }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
-  }, [typedMessages]) 
+  }, [messages]) 
 
   return (
     <div
       ref={containerRef}
       className='message-list'
     >
-      {typedMessages.map((msg, index) => {
-        const previousMsg = typedMessages[index - 1]
+      {messages.map((msg, index) => {
+        const previousMsg = messages[index - 1]
         const isSameSender = previousMsg && previousMsg.userId === msg.userId
 
         return (
           <MessageEntry
-            key={`${msg.id}-${index}`}
+            key={`${msg.msgId}-${index}`}
             userId={msg.userId}
-            text={msg.message}
+            text={msg.msg_data}
             fromCurrentUser={msg.userId === currentUserId}
             isGrouped={isSameSender}
           />
