@@ -265,6 +265,13 @@ void Connection::messageResendCheck() {
     sleep(3); //FIXME: REMOVE THIS BAD BOY
 }
 
+void Connection::addClient(uint16_t port, uint32_t ip) {
+    INFO_SRC("Connection[addClient] - Adding Client by sending SYN [IP=%u PORT=%u]", ip, port);
+    clients.try_emplace(port, port, ip, 0, 0, 0, static_cast<uint8_t>(STATE::NONE));
+    createMessage(source_port, port, default_sequence_number, default_ack_number, static_cast<uint8_t>(FLAGS::SYN), window_size, urgent_pointer, destinationIP, static_cast<uint8_t>(STATE::SYN_SENT), 0, 0);
+    clients[port].setExpectedSequence(default_sequence_number+1);
+}
+
 
 //TODO: REFRACTOR CODE TO MAKE THIS FUNCTION SMALLER AND IMPLEMENT FUNCTIONAL PROGRAMMING 
 // FUNCTION FOR EACH STATE SO WE CAN SPLIT IT UP AND CAN FIND ERRORS EASIER

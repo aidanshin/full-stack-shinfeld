@@ -22,6 +22,8 @@ class VIMMessage {
         ThreadSafeQueue<std::vector<uint8_t>> ws_sender_queue;
 
         std::unique_ptr<WebSocketServer> websocketserver;
+        
+        std::thread vim_message_handler;
 
         void startWebSocketServer();                
 

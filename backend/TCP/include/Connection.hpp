@@ -85,7 +85,8 @@ class Connection {
 
         uint32_t getDefaultAckNumber() const {return default_ack_number;}
         void setDefaultAckNumber(uint32_t val) {default_ack_number = val;}
-
+        
+        void addClient(uint16_t port, uint32_t ip);
 };
 
 #endif

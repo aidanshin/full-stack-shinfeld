@@ -41,6 +41,10 @@ std::vector<uint8_t> WebSocketFrame::getPayload() const {
     return payload;
 }
 
+std::vector<uint8_t>&& WebSocketFrame::extractPayload() {
+    return std::move(payload);
+}
+
 void WebSocketFrame::setPayload(std::vector<uint8_t> data) {
     payload = std::move(data);
 }

@@ -59,7 +59,8 @@ class WebSocketFrame {
 
         std::vector<uint8_t> getPayload() const;
         void setPayload(std::vector<uint8_t> data);
-
+        std::vector<uint8_t>&& extractPayload();
+        
         void setMaskKey(uint32_t key);
         uint32_t getMaskKey() const;
         void removeMask();

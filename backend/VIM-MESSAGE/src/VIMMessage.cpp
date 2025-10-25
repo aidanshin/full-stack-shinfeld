@@ -1,19 +1,3 @@
-// Main brain logic
-// call functions to starts threads for all connections 
-// logs all data in and out 
-// link to react so they both start at the same time ? 
-
-
-
-// Functions 
-// estbalihses web socket connection wtih REACT + starts TCP server 
-// - give two threads for sending and receiving to react 
-// new message from React, if it is new client
-// create a new TCP connection for client - need to implement logic on TCP library 
-// infinite loop of checking for new message 
-// decode 
-// process data 
-
 #include "VIMMessage.hpp"
 
 VIMMessage::VIMMessage(
@@ -27,14 +11,12 @@ VIMMessage::VIMMessage(
 }
 
 void VIMMessage::start() {
-    // start TCP COnnection
     connection->connect();
 
-    //start webscoket server 
     startWebSocketServer();
 
     running = true;
-    startMessageHandler();
+    vim_message_handler = std::thread(&VIMMessage::startMessageHandler, this);
 }
 
 void VIMMessage::startWebSocketServer() {
@@ -44,6 +26,7 @@ void VIMMessage::startWebSocketServer() {
 
 void VIMMessage::stop() {
     running = false;
+    if(vim_message_handler.joinable()) vim_message_handler.join();
     connection->disconnect();
     websocketserver->stop();
 }
@@ -53,7 +36,18 @@ bool VIMMessage::websocketHandler() {
     if(ws_receiver_queue.tryPop(new_packet)) {
             auto decode_packet = WebSocketFrame::decodeFrame(new_packet);
             if(decode_packet) {
-                auto payload = decode_packet->getPayload();
+                auto payload = decode_packet->extractPayload();
+                auto payloadCopy = payload;
+                auto decoded_payload = VIMPacket::decodePacket(payload);
+                if(decoded_payload.has_value()) {
+                    auto data = decoded_payload.value();
+                    if(data.getType() == 3) {
+                        connection->addClient(data.getPort(), data.getIP());
+                    }
+                    else {
+                        tcp_input_queue.push(std::move(payloadCopy));
+                    }
+                }
                 if(!payload.empty()) tcp_input_queue.push(std::move(payload));
                 return true;
             }
@@ -71,27 +65,26 @@ bool VIMMessage::tcpHandler() {
             hasData = true;
             switch(decode_packet->getType()) {
                 case 1: 
-                    //received message from connection change type to a 2 and forward to UI
                     ws_sender_queue.push(std::move(VIMPacket::createPacket(2, decode_packet->getUserId(), decode_packet->getMsgId(), decode_packet->getMsgData())));
-                    // break;
+                    break;
                 case 2: 
-                    //error should have not reeived this 
-                    // ws_sender_queue.push(std::move(new_packet));
                     TRACE_SRC("tcpHandler - Received type 2 packet");
                     decode_packet->printPacket();
                     break;
-                case 3: 
-                    //requesting connnection to you -> add IP and Port to clients 
-                    auto ip = decode_packet->getIP();
-                    auto port = decode_packet->getPort();
-                    // TODO
-                    // FIXME
-                    // BUG
-                    // clients.try_emplace(port, client) TODO FIXME BUG
+                case 3: { 
+                    auto confirm_packet = VIMPacket::createPacket(4, decode_packet->getIP(), decode_packet->getPort(), 1000);
+                    auto confirm_packet_tcp = confirm_packet;
+                    ws_sender_queue.push(std::move(confirm_packet));
+                    tcp_input_queue.push(std::move(confirm_packet_tcp));
+
                     break;
-                case 4: 
+                }
+                case 4: {
                     //confirming connection notify UI and messages can now be sent 
+                    auto confirm_packet = VIMPacket::createPacket(4, decode_packet->getIP(), decode_packet->getPort(), 1000);
+                    ws_sender_queue.push(std::move(confirm_packet));
                     break;
+                }
                 default:
                     hasData = false;
                     continue;
@@ -115,10 +108,5 @@ void VIMMessage::startMessageHandler() {
             std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
     }
-    //check WebSocketQueue Receiver Queue for command 
-        // determine how to change the packet and pipeline to inputQueue of TCP 
-        // 
-    //check TCP Client receiveQueues 
-        // determine logic direction of data from the tcp data 
-
+    INFO_SRC("startMessageHandler - Closing");
 }
