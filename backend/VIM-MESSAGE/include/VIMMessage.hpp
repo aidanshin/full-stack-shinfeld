@@ -11,8 +11,11 @@ class VIMMessage {
     private:
         std::atomic<bool> running{false};
 
-        std::string IP;
-        uint16_t port;
+        std::string tcp_IP;
+        uint16_t tcp_port;
+
+        std::string ws_IP;
+        uint16_t ws_port;
 
         ThreadSafeQueue<std::vector<uint8_t>> tcp_input_queue;
         std::map<uint16_t, Client> clients;
@@ -32,8 +35,10 @@ class VIMMessage {
         bool tcpHandler();
     public:
         VIMMessage(
-            std::string IP,
-            uint16_t port
+            std::string tcpIP,
+            uint16_t tcpPort,
+            std::string wsIP,
+            uint16_t wsPort
         );
         void start();
         void stop();

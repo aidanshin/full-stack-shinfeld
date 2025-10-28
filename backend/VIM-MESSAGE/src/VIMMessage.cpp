@@ -1,16 +1,22 @@
 #include "VIMMessage.hpp"
 
 VIMMessage::VIMMessage(
-    std::string IP,
-    uint16_t port
+    std::string tcpIP,
+    uint16_t tcpPort,
+    std::string wsIP,
+    uint16_t wsPort
 ) : 
-    IP(IP),
-    port(port)
+    tcp_IP(tcpIP),
+    tcp_port(tcpPort),
+    ws_IP(wsIP),
+    ws_port(wsPort)
 {
-    connection = std::make_unique<Connection>(port, IP, tcp_input_queue, clients);
+    connection = std::make_unique<Connection>(tcp_port, tcp_IP, tcp_input_queue, clients);
+    TRACE_SRC("VIMMessage[constructor] - TCP[IP:PORT] %s:%u | WS[IP:PORT] %s:%u", tcpIP.c_str(), tcpPort, wsIP.c_str(), wsPort);
 }
 
 void VIMMessage::start() {
+    INFO_SRC("VIMMessage[start] - Starting Process");
     connection->connect();
 
     startWebSocketServer();
@@ -20,8 +26,8 @@ void VIMMessage::start() {
 }
 
 void VIMMessage::startWebSocketServer() {
-    websocketserver = std::make_unique<WebSocketServer>(ws_receiver_queue, ws_sender_queue);
-    if(!websocketserver->start()) CRITICAL_SRC("startWebSocketServer - start return faile");
+    websocketserver = std::make_unique<WebSocketServer>(ws_receiver_queue, ws_sender_queue, ws_port, ws_IP);
+    if(!websocketserver->start()) {CRITICAL_SRC("startWebSocketServer - start return failed"); exit(EXIT_FAILURE);}
 }
 
 void VIMMessage::stop() {
@@ -41,14 +47,12 @@ bool VIMMessage::websocketHandler() {
                 auto decoded_payload = VIMPacket::decodePacket(payload);
                 if(decoded_payload.has_value()) {
                     auto data = decoded_payload.value();
-                    if(data.getType() == 3) {
+                    if(data.getType() == 3 && clients.find(data.getPort()) != clients.end()) {
                         connection->addClient(data.getPort(), data.getIP());
                     }
-                    else {
-                        tcp_input_queue.push(std::move(payloadCopy));
-                    }
+                    tcp_input_queue.push(std::move(payloadCopy));
+                    TRACE_SRC("VIMMessage[websocketHandler] - Forward data to tcp input queue");
                 }
-                if(!payload.empty()) tcp_input_queue.push(std::move(payload));
                 return true;
             }
         }
@@ -66,6 +70,7 @@ bool VIMMessage::tcpHandler() {
             switch(decode_packet->getType()) {
                 case 1: 
                     ws_sender_queue.push(std::move(VIMPacket::createPacket(2, decode_packet->getUserId(), decode_packet->getMsgId(), decode_packet->getMsgData())));
+                    TRACE_SRC("VIMMessage[tcpHandler] - 1: Forwarded to WS sender queue");
                     break;
                 case 2: 
                     TRACE_SRC("tcpHandler - Received type 2 packet");
@@ -76,13 +81,13 @@ bool VIMMessage::tcpHandler() {
                     auto confirm_packet_tcp = confirm_packet;
                     ws_sender_queue.push(std::move(confirm_packet));
                     tcp_input_queue.push(std::move(confirm_packet_tcp));
-
+                    TRACE_SRC("VIMMessage[tcpHandler] - 3: Send confirm packet to WS + TCP");
                     break;
                 }
                 case 4: {
-                    //confirming connection notify UI and messages can now be sent 
                     auto confirm_packet = VIMPacket::createPacket(4, decode_packet->getIP(), decode_packet->getPort(), 1000);
                     ws_sender_queue.push(std::move(confirm_packet));
+                    TRACE_SRC("VIMMessage[tcpHandler] - 4: Send confirm to WS Sender");
                     break;
                 }
                 default:
@@ -96,6 +101,7 @@ bool VIMMessage::tcpHandler() {
 
 
 void VIMMessage::startMessageHandler() {
+    INFO_SRC("VIMMessage[startMessageHandler] - Started");
     while (running) {
         
         if(websocketHandler()){
@@ -108,5 +114,5 @@ void VIMMessage::startMessageHandler() {
             std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
     }
-    INFO_SRC("startMessageHandler - Closing");
+    INFO_SRC("VIMMessage[startMessageHandler] - Closing");
 }

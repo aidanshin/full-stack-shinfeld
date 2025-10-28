@@ -3,9 +3,10 @@ import "./ExtrasModal.css"
 interface ExtraProps {
     onClose: () => void;
     sendRequest: (ip: string, port: number) => void;
+    buttonText: string;
 }
 
-const ExtrasModal: React.FC<ExtraProps> = ({onClose, sendRequest}) => {
+const ExtrasModal: React.FC<ExtraProps> = ({onClose, sendRequest, buttonText}) => {
 
     const [ip, setIp] = useState<string>("");
     const [port, setPort] = useState<string>("");
@@ -47,7 +48,7 @@ const ExtrasModal: React.FC<ExtraProps> = ({onClose, sendRequest}) => {
                     value={port}
                     onChange={(event)=>{setPort(event.target.value)}}
                 />
-                <button className="extramodal-button" onClick={sendMessageRequest}>Send Request</button>
+                <button className="extramodal-button" onClick={sendMessageRequest}>{buttonText}</button>
             </div>
         </div>
     )

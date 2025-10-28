@@ -1,9 +1,10 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -g -fsanitize=address -I./include -I../WEBSOCKET/include
+CXXFLAGS = -std=c++17 -Wall -Wextra -g -fsanitize=address -I./include -I../WEBSOCKET/include -I../TCP/include
 LDFLAGS_CRYP = -L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto
 CXXFLAGS += -I/opt/homebrew/opt/openssl@3/include
 
 WEBSOCKET_SRC = ../WEBSOCKET/src/HttpHandler.cpp ../WEBSOCKET/src/WebSocketFrame.cpp ../WEBSOCKET/src/WebSocketServer.cpp
+TCP_SRC = ../TCP/src/*.cpp
 
 VIMPACKET_TEST_SRC = tests/VIMPacketTest.cpp src/VIMPacket.cpp
 VIMPACKET_TEST_BIN = tests/vimpacket_test 

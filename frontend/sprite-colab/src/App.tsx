@@ -1,6 +1,6 @@
 // TODO: Fix Sizes of Usernames
 
-import {useState, useRef, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import WebSocketApi from './api/WebSocketApi';
 import VIMPacket from './api/VIMPacketApi';
 import MessageList from './components/messages/MessageList';
@@ -35,9 +35,9 @@ function App() {
       setMessages(prev => [...prev, packet]);
     }
   }
-  const handleConnect = () => {
+  const handleConnect = (ip: string, port: number) => {
     if(!wsApi) {
-      const api = new WebSocketApi("ws://localhost:8080");
+      const api = new WebSocketApi(`ws://${ip}:${port}`);
       setWsApi(api);
       api.connect(handleNewPacket, handleNewUser);
     }
