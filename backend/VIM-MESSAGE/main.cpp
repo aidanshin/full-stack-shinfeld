@@ -4,14 +4,14 @@
 std::atomic<bool> running(true);
 
 void signalHandler(int signum) {
-    std::cout << "\n Caught Crtl-C (SIGINT). Stoping..." <<std::endl;
+    std::cout << "\n Caught Crtl-C (SIGINT). Stopping..." <<std::endl;
     running = false;
 }
 
 int main(int argc, const char* argv[]) {
     
     if (argc != 5) {
-        std::cout << "./main tcpIP tcpPort wsIP wsPort" << std::endl;
+        std::cout << "Valid Input: ./main tcpIP tcpPort wsIP wsPort" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -37,7 +37,7 @@ int main(int argc, const char* argv[]) {
     while(running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
-
+    std::cout << "Calling vim_message.stop()" << std::endl;
     vim_message.stop();
     std::cout<< "VIMMessage stopped." << std::endl;
     
