@@ -71,6 +71,7 @@ make run ARGS="tcpIP tcpPort websocketIP websocketPort"
 ```
 
 ## Future Work
+- Implement Keystrokes movement within Frontend
 - Encryption and secure key exchange
 - Improved reliability with congestion control
 - Server discovery / peer-list synchronization
