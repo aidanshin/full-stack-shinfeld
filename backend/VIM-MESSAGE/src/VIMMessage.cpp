@@ -64,13 +64,14 @@ bool VIMMessage::tcpHandler() {
     bool hasData = false;
     for(auto& [port, client] : clients) {
         if(client.receivedData.tryPop(new_packet)) {
-            //FIXME
             auto decode_packet = VIMPacket::decodePacket(new_packet);
             if(!decode_packet.has_value()) continue;
+            TRACE_SRC("VIMMessage[tcpHandler] - Received packet from client and pushing forward");
             hasData = true;
-            switch(decode_packet->getType()) {
+            auto decoded_packet = decode_packet.value();
+            switch(decoded_packet.getType()) {
                 case 1: {
-                        auto confirm_packet = VIMPacket::createPacket(2, decode_packet->getUserId(), decode_packet->getMsgId(), decode_packet->getMsgData());
+                        auto confirm_packet = VIMPacket::createPacket(2, decoded_packet.getUserId(), decoded_packet.getMsgId(), decoded_packet.getMsgData());
                         auto frame = WebSocketFrame(true, false, false, false, static_cast<uint8_t>(WebSocketFrame::OPCODE::BINARY), false, static_cast<uint64_t>(confirm_packet.size()), 0, std::move(confirm_packet));
                         ws_sender_queue.push(frame.encodeFrame());
                         TRACE_SRC("VIMMessage[tcpHandler] - 1: Forwarded to WS sender queue");
@@ -78,10 +79,10 @@ bool VIMMessage::tcpHandler() {
                     }
                 case 2: 
                     TRACE_SRC("tcpHandler - Received type 2 packet");
-                    decode_packet->printPacket();
+                    decoded_packet.printPacket();
                     break;
                 case 3: { 
-                    auto confirm_packet = VIMPacket::createPacket(4, decode_packet->getIP(), decode_packet->getPort(), 1000);
+                    auto confirm_packet = VIMPacket::createPacket(4, decoded_packet.getIP(), decoded_packet.getPort(), 1);
                     auto confirm_packet_tcp = confirm_packet;
                     auto frame = WebSocketFrame(true, false, false, false, static_cast<uint8_t>(WebSocketFrame::OPCODE::BINARY), false, static_cast<uint64_t>(confirm_packet.size()), 0, std::move(confirm_packet));
                     ws_sender_queue.push(frame.encodeFrame());
@@ -90,7 +91,7 @@ bool VIMMessage::tcpHandler() {
                     break;
                 }
                 case 4: {
-                    auto confirm_packet = VIMPacket::createPacket(4, decode_packet->getIP(), decode_packet->getPort(), 1000);
+                    auto confirm_packet = VIMPacket::createPacket(4, decoded_packet.getIP(), decoded_packet.getPort(), 1);
                     auto frame = WebSocketFrame(true, false, false, false, static_cast<uint8_t>(WebSocketFrame::OPCODE::BINARY), false, static_cast<uint64_t>(confirm_packet.size()), 0, std::move(confirm_packet));
                     ws_sender_queue.push(frame.encodeFrame());
                     TRACE_SRC("VIMMessage[tcpHandler] - 4: Send confirm to WS Sender");

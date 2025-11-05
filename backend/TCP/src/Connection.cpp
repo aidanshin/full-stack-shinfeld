@@ -449,7 +449,7 @@ void Connection::communicate() {
                                     
                                     std::vector<uint8_t> packetData = seg->getData();
                                     client.receivedData.push(std::move(packetData));
-                                    data_written = client.writeFile(std::move(seg->getData()));
+                                    data_written = client.writeFile(seg->getData());
                                     
                                     uint32_t new_seq_num = seg->getSeqNum() + data_written;
                                     //FIXME: Out of order packet could be a FIN/FIN_ACK what do we do then
@@ -464,9 +464,9 @@ void Connection::communicate() {
                                                 // }
                                                 // std::cout << std::endl;
 
-                                                packetData = outOfOrderSegment->getData();
+                                                std::vector<uint8_t> packetData = outOfOrderSegment->getData();
                                                 client.receivedData.push(std::move(packetData));
-                                                data_written = client.writeFile(std::move(outOfOrderSegment->getData()));
+                                                data_written = client.writeFile(outOfOrderSegment->getData());
                                                 new_seq_num += data_written;
                                             }
                                             else break;

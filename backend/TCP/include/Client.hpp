@@ -10,6 +10,7 @@
 
 #include "Segment.hpp"
 #include "SegmentInfo.hpp"
+#include "ThreadSafeQueue.hpp"
 
 class Client {
     private:    
