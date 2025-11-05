@@ -34,6 +34,26 @@ Low-level concurrency mechanisms such as **threads**, **thread-safe queues**, **
 - **Networking:** UDP Sockets, Custom Protocol Serialization
 - **Concurrency:** Threads, Mutexes, Condition Variables
 
+# Message Encoding Format
+
+To ensure consistent communication between the C++ backend and the React/TypeScript frontend, VIMMessager uses a **custom binary message encoding format** implemented identically in both languages.
+
+Each message frame consists of:
+| Field | Size | Description |
+|------|------|-------------|
+| Message Type | 1 byte | Identifies the type of message |
+| IP | 2 Byte | Target IP | 
+| Port | 2 Byte | Target Port |
+| User ID | 4 byte | Unique Identifier |
+| Msg ID | 2 Byte | Unique Identifier |
+| Payload | variable | UTF-8 or binary payload data |
+
+This encoding format is implemented in:
+- **`backend/VIMMessage/VIMMessage.cpp` / `VIMMessage.cpp`** (C++)
+- **`frontend/vim-messager/src/api/VIMPacketApi.ts` / `VIMPacketApi.ts`** (TypeScript)
+
+This ensures that both ends of the connection interpret the data consistently.
+
 ## Build & Run Instructions
 
 ### Frontend
@@ -63,4 +83,8 @@ MIT License
 - **Flexible**: P2P or Server
 - **Peer-to-Peer (P2P) Design:** Each client can directly connect to others without requiring a central server.
 
-
+## Additional Documentation
+- [Frontend (React+TypeScript+Vite) Documentation](./frontend/vim-messager/README.md)
+- [TCP (C++) Documentation](./backend/TCP/README.md)
+- [WebSocket (C++) Documentation](./backend/WEBSOCKET/README.md)
+- [VIM Messager (backend) Documentation](./backend/VIM-MESSAGE/README.md)
