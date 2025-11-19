@@ -1,0 +1,5 @@
+/*
+Defines the schema 
+Create Schema file
+validates rows 
+*/

@@ -1,0 +1,4 @@
+/*
+This will take in a command object and then call the appropiate table command 
+
+*/

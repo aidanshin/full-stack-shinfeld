@@ -1,0 +1,15 @@
+/*
+
+Contains commands for everything regarding the table 
+
+CREATE
+
+INSERT
+
+SELECT
+
+UPDATE
+
+DELETE 
+
+*/
